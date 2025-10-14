@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Roll</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Garante que eventos de toque funcionem bem em dispositivos móveis */
+            touch-action: manipulation;
+        }
+        .font-creepster {
+            font-family: 'Creepster', cursive;
+        }
+        .dice {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .dice-placeholder {
+            border: 2px dashed rgba(255,255,255,0.2);
+        }
+        .btn-zombie {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-zombie:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        .btn-zombie:active {
+            transform: translateY(0);
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.75);
+        }
+        .modal-content {
+            animation: slide-up 0.4s ease-out;
+        }
+        @keyframes slide-up {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes roll-anim {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(0.9); }
+            75% { transform: rotate(270deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .rolling {
+            animation: roll-anim 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<!-- RESPONSIVE CHANGE: Alterado para min-h-screen para permitir rolagem em telas pequenas se necessário -->
+<body class="bg-gray-900 text-white min-h-screen">
+
+    <!-- Container para centralizar a tela de configuração inicial -->
+    <div id="setup-container" class="min-h-screen flex items-center justify-center p-4">
+        <div id="setup-screen" class="w-full max-w-md mx-auto p-6 md:p-8 bg-gray-800 rounded-2xl shadow-2xl modal-content">
+            <!-- RESPONSIVE CHANGE: Tamanho da fonte ajustado para telas menores -->
+            <h1 class="font-creepster text-5xl sm:text-6xl text-center text-green-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">Zombie Roll</h1>
+            <p class="text-center text-gray-400 mt-2 mb-6">Quantos zumbis famintos vão jogar?</p>
+            
+            <div class="mb-4">
+                <label for="player-count" class="block mb-2 text-sm font-medium text-gray-300">Número de Jogadores</label>
+                <select id="player-count" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5">
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                    <option>6</option>
+                </select>
+            </div>
+            
+            <div id="player-names-container" class="space-y-3 mb-6"></div>
+            
+            <button id="start-game-btn" class="w-full btn-zombie bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg">Começar a Caçada!</button>
+        </div>
+    </div>
+
+
+    <!-- Tela Principal do Jogo -->
+    <!-- RESPONSIVE CHANGE: min-h-screen garante que a tela ocupe toda a altura -->
+    <div id="game-screen" class="hidden w-full min-h-screen flex flex-col p-2 sm:p-4 md:p-6 lg:p-8">
+        <header class="flex flex-wrap justify-between items-center gap-4 mb-4">
+            <div>
+                <!-- RESPONSIVE CHANGE: Tamanho da fonte ajustado -->
+                <h1 class="font-creepster text-4xl sm:text-5xl text-green-400">Zombie Roll</h1>
+                <p id="turn-info" class="text-base sm:text-lg text-gray-300">Turno de: <span id="current-player-name" class="font-bold text-white"></span></p>
+            </div>
+            <!-- RESPONSIVE CHANGE: Placar agora permite scroll horizontal em telas muito pequenas -->
+            <div id="scoreboard" class="w-full sm:w-auto bg-gray-800 rounded-lg p-2 sm:p-3 flex gap-2 sm:gap-4 text-sm overflow-x-auto">
+                <!-- Scores dos jogadores serão inseridos aqui -->
+            </div>
+        </header>
+
+        <!-- RESPONSIVE CHANGE: Ajustado o gap para diferentes tamanhos de tela -->
+        <main class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <!-- Coluna do Turno -->
+            <div class="lg:col-span-1 bg-gray-800 rounded-2xl p-4 sm:p-6 flex flex-col">
+                <h2 class="text-xl sm:text-2xl font-bold mb-4 text-center">Pontos do Turno</h2>
+                <div class="flex-grow flex flex-row lg:flex-col justify-around items-center gap-6">
+                    <!-- Placar de Cérebros -->
+                    <div class="text-center">
+                        <!-- RESPONSIVE CHANGE: Ícones e fontes com tamanhos ajustáveis -->
+                        <div id="turn-brains-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto"></div>
+                        <p id="turn-brains-score" class="text-3xl sm:text-4xl font-bold mt-2">0</p>
+                        <p class="text-gray-400">Cérebros</p>
+                    </div>
+                    <!-- Placar de Tiros -->
+                    <div class="text-center">
+                        <div id="turn-shots-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto"></div>
+                        <p id="turn-shots-score" class="text-3xl sm:text-4xl font-bold mt-2">0</p>
+                         <p class="text-gray-400">Tiros</p>
+                    </div>
+                </div>
+                 <div id="dice-cup-info" class="text-center mt-6 text-gray-400">
+                    Dados no copo: <span id="dice-cup-count" class="font-bold text-white">16</span>
+                </div>
+            </div>
+
+            <!-- Coluna de Rolagem -->
+            <div class="lg:col-span-2 bg-gray-800/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between">
+                <div>
+                     <h2 class="text-xl sm:text-2xl font-bold mb-6 text-center">Dados Rolados</h2>
+                     <!-- RESPONSIVE CHANGE: Gap e altura mínima ajustados para melhor encaixe -->
+                     <div id="dice-area" class="grid grid-cols-3 gap-2 sm:gap-4 min-h-[100px] sm:min-h-[120px]">
+                        <!-- Dados rolados aparecem aqui -->
+                     </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <p id="game-message" class="min-h-[2rem] text-base sm:text-lg text-yellow-300 mb-4"></p>
+                    <!-- RESPONSIVE CHANGE: Layout dos botões já era bom, mantido -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button id="roll-btn" class="btn-zombie bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Rolar Dados</button>
+                        <button id="stop-btn" class="btn-zombie bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Parar Turno</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Fim de Jogo -->
+    <div id="game-over-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4">
+        <div class="modal-content bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
+            <h2 class="font-creepster text-5xl text-green-400 mb-2">Fim de Jogo!</h2>
+            <p id="winner-message" class="text-xl mb-6"></p>
+            <button id="play-again-btn" class="w-full btn-zombie bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg">Jogar Novamente</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- ELEMENTOS DO DOM ---
+            const setupContainer = document.getElementById('setup-container');
+            const gameScreen = document.getElementById('game-screen');
+            const playerCountSelect = document.getElementById('player-count');
+            const playerNamesContainer = document.getElementById('player-names-container');
+            const startGameBtn = document.getElementById('start-game-btn');
+            
+            const currentPlayerNameEl = document.getElementById('current-player-name');
+            const scoreboardEl = document.getElementById('scoreboard');
+            const turnBrainsScoreEl = document.getElementById('turn-brains-score');
+            const turnShotsScoreEl = document.getElementById('turn-shots-score');
+            const diceCupCountEl = document.getElementById('dice-cup-count');
+            const diceAreaEl = document.getElementById('dice-area');
+            const gameMessageEl = document.getElementById('game-message');
+            const rollBtn = document.getElementById('roll-btn');
+            const stopBtn = document.getElementById('stop-btn');
+
+            const gameOverModal = document.getElementById('game-over-modal');
+            const winnerMessageEl = document.getElementById('winner-message');
+            const playAgainBtn = document.getElementById('play-again-btn');
+
+            // --- ÍCONES SVG ---
+            const ICONS = {
+                cerebro: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-green-400 w-full h-full drop-shadow-lg"><path d="M12 2C9.25 2 7 4.25 7 7c0 1.5.63 2.82 1.63 3.75L7 12.18C4.24 13.5 3 15.62 3 18v2h18v-2c0-2.38-1.24-4.5-4-5.82l-1.63-1.43C16.37 9.82 17 8.5 17 7c0-2.75-2.25-5-5-5zm0 2c1.65 0 3 1.35 3 3s-1.35 3-3 3-3-1.35-3-3 1.35-3 3-3zM5.23 18c.4-1.36 1.48-2.52 3.03-3.19l1.73 1.44c-.2.53-.36 1.09-.45 1.66L5.23 18zm13.54 0l-4.31-.09c-.09-.57-.25-1.13-.45-1.66l1.73-1.44c1.56.67 2.63 1.83 3.03 3.19z"/></svg>`,
+                tiro: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-red-500 w-full h-full drop-shadow-lg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" transform="scale(1.2) translate(-2, -2)"/><circle cx="12" cy="12" r="3"/></svg>`,
+                pegada: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-yellow-400 w-full h-full drop-shadow-lg"><path d="M12 2c2.76 0 5 2.24 5 5 0 1.45-.62 2.75-1.59 3.69L12 15l-3.41-4.31C7.62 9.75 7 8.45 7 7c0-2.76 2.24-5 5-5zm0 2c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm-5 9.88V19h10v-5.12l-5 6.25-5-6.25z"/></svg>`,
+                capacete: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-blue-400 w-full h-full drop-shadow-lg"><path d="M21 9c0-4.97-4.03-9-9-9S3 4.03 3 9v2c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-2zm-2 0H5c0-3.86 3.14-7 7-7s7 3.14 7 7zM4 14h16v6c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2v-6z"/></svg>`,
+                energetico: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-purple-400 w-full h-full drop-shadow-lg"><path d="M9 20h6v-2H9v2zm4-18h-2v2h2V2zm6.95 4.95l-1.41 1.41C17.63 9.27 17 10.59 17 12c0 2.76-2.24 5-5 5s-5-2.24-5-5c0-1.41.63-2.73 1.55-3.64L7.05 6.95C5.23 8.77 4 11.25 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-2.75-1.23-5.23-3.05-7.05z"/></svg>`,
+                player: `<svg viewBox="0 0 24 24" fill="currentColor" class="w-full h-full"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`,
+                skull: `<svg viewBox="0 0 24 24" fill="currentColor" class="w-full h-full text-red-500"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM9.5 15c-.83 0-1.5-.67-1.5-1.5S8.67 12 9.5 12s1.5.67 1.5 1.5S10.33 15 9.5 15zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 12 14.5 12s1.5.67 1.5 1.5S15.33 15 14.5 15zM12 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>`
+            };
+            ICONS['dois cerebros'] = `<div class="relative w-full h-full">${ICONS.cerebro}<span class="absolute top-0 right-0 -mt-1 -mr-1 bg-green-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 shadow-md">2x</span></div>`;
+            ICONS['dois tiros'] = `<div class="relative w-full h-full">${ICONS.tiro}<span class="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600 text-white text-xs font-bold rounded-full px-1.5 py-0.5 shadow-md">2x</span></div>`;
+            
+            document.getElementById('turn-brains-icon').innerHTML = ICONS.cerebro;
+            document.getElementById('turn-shots-icon').innerHTML = ICONS.tiro;
+
+            // --- ESTADO DO JOGO ---
+            let gameState = {};
+
+            // --- LÓGICA DO JOGO ---
+            const DICE_FACES = {
+                verde: ['cerebro', 'cerebro', 'cerebro', 'pegada', 'tiro', 'tiro'],
+                amarelo: ['cerebro', 'cerebro', 'pegada', 'pegada', 'tiro', 'tiro'],
+                vermelho: ['cerebro', 'pegada', 'pegada', 'tiro', 'tiro', 'tiro'],
+                rosa: ['cerebro', 'pegada', 'pegada', 'pegada', 'tiro', 'tiro'],
+                branco: ['pegada', 'pegada', 'pegada', 'dois cerebros', 'dois tiros', 'capacete'],
+                'papai noel': ['cerebro', 'pegada', 'tiro', 'dois cerebros', 'capacete', 'energetico']
+            };
+            
+            const DICE_COLORS = {
+                verde: 'bg-green-500',
+                amarelo: 'bg-yellow-400',
+                vermelho: 'bg-red-600',
+                rosa: 'bg-pink-400',
+                branco: 'bg-gray-100',
+                'papai noel': 'bg-gradient-to-br from-red-500 to-white'
+            };
+
+            function createDiceCup() {
+                return [
+                    ...Array(6).fill('verde'), ...Array(4).fill('amarelo'),
+                    ...Array(3).fill('vermelho'), 'rosa', 'branco', 'papai noel'
+                ];
+            }
+
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            
+            function updatePlayerNames() {
+                const count = parseInt(playerCountSelect.value);
+                playerNamesContainer.innerHTML = '';
+                for (let i = 0; i < count; i++) {
+                    playerNamesContainer.innerHTML += `
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400">🧟</span>
+                            <input type="text" placeholder="Nome do Jogador ${i + 1}" class="player-name-input bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5" required value="Jogador ${i + 1}">
+                        </div>`;
+                }
+            }
+
+            function initializeGame() {
+                const playerInputs = document.querySelectorAll('.player-name-input');
+                const players = Array.from(playerInputs).map((input, index) => ({
+                    name: input.value || `Jogador ${index + 1}`,
+                    score: 0
+                }));
+
+                gameState = {
+                    players,
+                    currentPlayerIndex: 0,
+                    turn: 1,
+                    diceCup: [],
+                    turnState: {
+                        brains: 0,
+                        shots: 0,
+                        footprintDice: []
+                    },
+                    isTurnOver: false
+                };
+                
+                setupContainer.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                gameScreen.classList.add('flex'); // Garante que o flexbox seja aplicado
+
+                startTurn();
+            }
+            
+            function startTurn() {
+                gameState.turnState = { brains: 0, shots: 0, footprintDice: [] };
+                gameState.diceCup = shuffle(createDiceCup());
+                gameState.isTurnOver = false;
+
+                updateUI();
+                renderDice([]);
+                rollBtn.disabled = false;
+                stopBtn.disabled = false;
+                gameMessageEl.textContent = `É a sua vez, ${gameState.players[gameState.currentPlayerIndex].name}!`;
+            }
+
+            function rollDice() {
+                if (gameState.isTurnOver) return;
+                
+                rollBtn.disabled = true;
+                stopBtn.disabled = true;
+
+                // Animação de rolar
+                diceAreaEl.innerHTML = '';
+                for (let i=0; i<3; i++) {
+                     diceAreaEl.innerHTML += `
+                        <div class="dice-placeholder h-20 sm:h-24 md:h-28 flex items-center justify-center p-2 rounded-lg rolling">
+                            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-600 rounded-md animate-pulse"></div>
+                        </div>`;
+                }
+                
+                setTimeout(() => {
+                    performRoll();
+                    rollBtn.disabled = false;
+                    stopBtn.disabled = false;
+
+                    if (gameState.isTurnOver) {
+                        rollBtn.disabled = true;
+                        stopBtn.disabled = true;
+                        setTimeout(nextPlayer, 2500);
+                    }
+                }, 800);
+            }
+
+            function performRoll() {
+                let diceToRoll = [];
+                let diceResults = [];
+
+                const needed = 3 - gameState.turnState.footprintDice.length;
+                
+                if (gameState.diceCup.length < needed) {
+                    gameMessageEl.textContent = "Não há dados suficientes! Re-embaralhando os usados...";
+                    gameState.diceCup.push(...shuffle(createDiceCup()));
+                }
+
+                diceToRoll.push(...gameState.turnState.footprintDice);
+                gameState.turnState.footprintDice = [];
+                
+                for(let i = 0; i < needed; i++) {
+                    diceToRoll.push(gameState.diceCup.shift());
+                }
+
+                for (const color of diceToRoll) {
+                    const faces = DICE_FACES[color];
+                    const result = faces[Math.floor(Math.random() * faces.length)];
+                    diceResults.push({ color, result });
+                }
+                
+                processRollResults(diceResults);
+                updateUI();
+                renderDice(diceResults);
+            }
+
+            function processRollResults(results) {
+                let currentRollMessage = [];
+
+                for (const item of results) {
+                    switch(item.result) {
+                        case 'cerebro':
+                            gameState.turnState.brains++;
+                            currentRollMessage.push("um cérebro");
+                            break;
+                        case 'dois cerebros':
+                            gameState.turnState.brains += 2;
+                            currentRollMessage.push("dois cérebros");
+                            break;
+                        case 'tiro':
+                            gameState.turnState.shots++;
+                            currentRollMessage.push("um tiro");
+                            break;
+                        case 'dois tiros':
+                            gameState.turnState.shots += 2;
+                            currentRollMessage.push("dois tiros");
+                            break;
+                        case 'capacete':
+                            if (gameState.turnState.shots > 0) gameState.turnState.shots--;
+                            currentRollMessage.push("um capacete salvador");
+                            break;
+                        case 'energetico':
+                            currentRollMessage.push("um energético");
+                            break;
+                        case 'pegada':
+                            gameState.turnState.footprintDice.push(item.color);
+                            currentRollMessage.push("uma pegada");
+                            break;
+                    }
+                }
+                
+                gameMessageEl.textContent = `Você conseguiu: ${currentRollMessage.join(', ')}!`;
+
+                if (gameState.turnState.shots >= 3) {
+                    gameState.isTurnOver = true;
+                    gameState.turnState.brains = 0;
+                    gameMessageEl.textContent = 'BOOM! Você levou 3 tiros e perdeu seus cérebros!';
+                }
+                 
+                const totalBrains = gameState.players[gameState.currentPlayerIndex].score + gameState.turnState.brains;
+                if(totalBrains >= 13) {
+                    endTurn();
+                }
+            }
+            
+            function endTurn() {
+                if(gameState.isTurnOver) {
+                    nextPlayer();
+                    return;
+                }
+                
+                const brainsScored = gameState.turnState.brains;
+                gameState.players[gameState.currentPlayerIndex].score += brainsScored;
+                gameMessageEl.textContent = `Você marcou ${brainsScored} cérebro${brainsScored !== 1 ? 's' : ''}!`;
+                
+                rollBtn.disabled = true;
+                stopBtn.disabled = true;
+                
+                if (gameState.players[gameState.currentPlayerIndex].score >= 13) {
+                    setTimeout(endGame, 2000);
+                } else {
+                    setTimeout(nextPlayer, 2000);
+                }
+            }
+
+            function nextPlayer() {
+                gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+                if (gameState.currentPlayerIndex === 0) {
+                    gameState.turn++;
+                }
+                startTurn();
+            }
+            
+            function endGame() {
+                const winner = gameState.players.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+                winnerMessageEl.innerHTML = `<span class="font-bold text-white">${winner.name}</span> é o zumbi supremo com <span class="font-bold text-white">${winner.score}</span> cérebro${winner.score !== 1 ? 's' : ''}!`;
+                gameOverModal.classList.remove('hidden');
+                gameOverModal.classList.add('flex');
+            }
+
+            // --- FUNÇÕES DE RENDERIZAÇÃO ---
+            function updateUI() {
+                const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+                currentPlayerNameEl.textContent = currentPlayer.name;
+                
+                // Scoreboard
+                scoreboardEl.innerHTML = '';
+                gameState.players.forEach((player, index) => {
+                    const isActive = index === gameState.currentPlayerIndex;
+                    scoreboardEl.innerHTML += `
+                        <div class="text-center p-2 rounded-md ${isActive ? 'bg-green-500/30' : ''} flex-shrink-0">
+                            <p class="font-semibold truncate max-w-[80px] sm:max-w-[100px]">${player.name}</p>
+                            <p class="text-xl font-bold">${player.score}</p>
+                        </div>
+                    `;
+                });
+                
+                turnBrainsScoreEl.textContent = gameState.turnState.brains;
+                turnShotsScoreEl.textContent = gameState.turnState.shots;
+                diceCupCountEl.textContent = gameState.diceCup.length;
+            }
+
+            function renderDice(results) {
+                diceAreaEl.innerHTML = '';
+                const diceSizeClass = 'h-20 sm:h-24 md:h-28';
+                
+                if (!results || results.length === 0) {
+                     for (let i=0; i<3; i++) {
+                         diceAreaEl.innerHTML += `<div class="dice-placeholder ${diceSizeClass} rounded-lg"></div>`;
+                     }
+                    return;
+                }
+
+                results.forEach(item => {
+                    const diceColorClass = DICE_COLORS[item.color] || 'bg-gray-500';
+                    const iconHTML = ICONS[item.result] || '';
+                    
+                    const diceElement = document.createElement('div');
+                    diceElement.className = `dice ${diceColorClass} ${diceSizeClass} flex items-center justify-center p-2 sm:p-4 rounded-lg`;
+                    diceElement.innerHTML = iconHTML;
+                    diceAreaEl.appendChild(diceElement);
+                });
+
+                // Preencher com placeholders se houver pegadas para manter o layout
+                 for (let i = 0; i < 3 - results.length; i++) {
+                    diceAreaEl.innerHTML += `<div class="dice-placeholder ${diceSizeClass} rounded-lg"></div>`;
+                }
+            }
+
+            // --- EVENT LISTENERS ---
+            playerCountSelect.addEventListener('change', updatePlayerNames);
+            startGameBtn.addEventListener('click', initializeGame);
+            rollBtn.addEventListener('click', rollDice);
+            stopBtn.addEventListener('click', endTurn);
+            playAgainBtn.addEventListener('click', () => {
+                location.reload();
+            });
+
+            // --- INICIALIZAÇÃO ---
+            updatePlayerNames();
+        });
+    </script>
+</body>
+</html>
