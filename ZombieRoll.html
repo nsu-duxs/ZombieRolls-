@@ -54,6 +54,15 @@
         .rolling {
             animation: roll-anim 0.5s ease-in-out;
         }
+        /* Efeito para o dado transformado pelo energético */
+        @keyframes transform-glow {
+            0% { box-shadow: 0 0 5px rgba(192, 132, 252, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 20px rgba(192, 132, 252, 1), 0 0 25px rgba(167, 139, 250, 0.8); transform: scale(1.1); }
+            100% { box-shadow: 0 0 5px rgba(192, 132, 252, 0.5); transform: scale(1); }
+        }
+        .transformed-brain {
+            animation: transform-glow 0.8s ease-in-out;
+        }
     </style>
 </head>
 <!-- RESPONSIVE CHANGE: Alterado para min-h-screen para permitir rolagem em telas pequenas se necessário -->
@@ -128,10 +137,10 @@
             <div class="lg:col-span-2 bg-gray-800/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between">
                 <div>
                      <h2 class="text-xl sm:text-2xl font-bold mb-6 text-center">Dados Rolados</h2>
-                     <!-- RESPONSIVE CHANGE: Gap e altura mínima ajustados para melhor encaixe -->
-                     <div id="dice-area" class="grid grid-cols-3 gap-2 sm:gap-4 min-h-[100px] sm:min-h-[120px]">
+                      <!-- RESPONSIVE CHANGE: Gap e altura mínima ajustados para melhor encaixe -->
+                      <div id="dice-area" class="grid grid-cols-3 gap-2 sm:gap-4 min-h-[100px] sm:min-h-[120px]">
                         <!-- Dados rolados aparecem aqui -->
-                     </div>
+                    </div>
                 </div>
                 <div class="mt-6 text-center">
                     <p id="game-message" class="min-h-[2rem] text-base sm:text-lg text-yellow-300 mb-4"></p>
@@ -270,7 +279,7 @@
             }
             
             function startTurn() {
-                gameState.turnState = { brains: 0, shots: 0, footprintDice: [] };
+                gameState.turnState = { brains: 0, shots: 0, footprintDice: [], isEnergized: false };
                 gameState.diceCup = shuffle(createDiceCup());
                 gameState.isTurnOver = false;
 
@@ -341,11 +350,27 @@
             function processRollResults(results) {
                 let currentRollMessage = [];
 
+                // LÓGICA DO ENERGÉTICO: Ativa o efeito se um energético for rolado. O efeito dura o turno todo.
+                if (results.some(item => item.result === 'energetico')) {
+                    gameState.turnState.isEnergized = true;
+                }
+
+                // Se o turno estiver energizado, transforma as pegadas verdes desta rodada
+                if (gameState.turnState.isEnergized) {
+                    results.forEach(item => {
+                        if (item.color === 'verde' && item.result === 'pegada') {
+                            item.result = 'cerebro'; // Transforma a pegada em cérebro
+                            item.transformed = true; // Adiciona um marcador para a animação
+                        }
+                    });
+                }
+
                 for (const item of results) {
                     switch(item.result) {
                         case 'cerebro':
                             gameState.turnState.brains++;
-                            currentRollMessage.push("um cérebro");
+                            // Mensagem customizada para pegada transformada
+                            currentRollMessage.push(item.transformed ? "uma pegada energizada" : "um cérebro");
                             break;
                         case 'dois cerebros':
                             gameState.turnState.brains += 2;
@@ -360,11 +385,14 @@
                             currentRollMessage.push("dois tiros");
                             break;
                         case 'capacete':
-                            gameState.turnState.shots--;
+                            // Garante que o número de tiros não seja negativo
+                            if (gameState.turnState.shots > 0) {
+                                gameState.turnState.shots--;
+                            }
                             currentRollMessage.push("um capacete salvador");
                             break;
                         case 'energetico':
-                            currentRollMessage.push("um energético");
+                            currentRollMessage.push("um energético!");
                             break;
                         case 'pegada':
                             gameState.turnState.footprintDice.push(item.color);
@@ -380,7 +408,7 @@
                     gameState.turnState.brains = 0;
                     gameMessageEl.textContent = 'BOOM! Você levou 3 tiros e perdeu seus cérebros!';
                 }
-                 
+                
                 const totalBrains = gameState.players[gameState.currentPlayerIndex].score + gameState.turnState.brains;
                 if(totalBrains >= 13) {
                     endTurn();
@@ -450,7 +478,7 @@
                 
                 if (!results || results.length === 0) {
                      for (let i=0; i<3; i++) {
-                         diceAreaEl.innerHTML += `<div class="dice-placeholder ${diceSizeClass} rounded-lg"></div>`;
+                          diceAreaEl.innerHTML += `<div class="dice-placeholder ${diceSizeClass} rounded-lg"></div>`;
                      }
                     return;
                 }
@@ -461,6 +489,12 @@
                     
                     const diceElement = document.createElement('div');
                     diceElement.className = `dice ${diceColorClass} ${diceSizeClass} flex items-center justify-center p-2 sm:p-4 rounded-lg`;
+                    
+                    // Adiciona a classe de animação se o dado foi transformado
+                    if (item.transformed) {
+                        diceElement.classList.add('transformed-brain');
+                    }
+
                     diceElement.innerHTML = iconHTML;
                     diceAreaEl.appendChild(diceElement);
                 });
@@ -486,3 +520,4 @@
     </script>
 </body>
 </html>
+
