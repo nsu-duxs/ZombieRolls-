@@ -1,12 +1,15 @@
-🧟‍♂️ Zombie Roll 🎲
+# 🧟‍♂️ Zombie Roll 🎲
+
 Bem-vindo ao Zombie Roll, uma adaptação digital do popular jogo de dados onde a sorte e a fome por cérebros se encontram! Reúna seus amigos, escolha seus nomes de zumbi e veja quem é o morto-vivo mais sortudo da rodada.
 
-✨ Jogue Agora! ✨
+# ✨ Jogue Agora! ✨
+
 A caçada por cérebros está a apenas um clique de distância. Jogue diretamente no seu navegador:
 
-➡️ CLIQUE AQUI PARA JOGAR ZOMBIE ROLL
+# ➡️ CLIQUE AQUI PARA JOGAR ZOMBIE ROLL
 
-🚀 Funcionalidades
+# 🚀 Funcionalidades
+
 Multiplayer Local: Jogue com 2 a 6 amigos no mesmo dispositivo.
 
 Nomes Personalizados: Dê a cada zumbi um nome único para uma experiência mais imersiva.
@@ -19,7 +22,8 @@ Totalmente Responsivo: Jogue no seu computador, tablet ou celular com uma experi
 
 Animações e Efeitos: Animações de rolagem de dados e efeitos visuais para os eventos do jogo.
 
-🧠 Como Jogar (Tutorial)
+# 🧠 Como Jogar (Tutorial)
+
 Objetivo
 O objetivo é simples: seja o primeiro zumbi a coletar 13 cérebros!
 
