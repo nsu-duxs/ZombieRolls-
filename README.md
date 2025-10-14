@@ -6,7 +6,7 @@ Bem-vindo ao Zombie Roll, uma adaptação digital do popular jogo de dados onde 
 
 A caçada por cérebros está a apenas um clique de distância. Jogue diretamente no seu navegador:
 
-# ➡️ CLIQUE AQUI PARA JOGAR ZOMBIE ROLL
+# [➡️ CLIQUE AQUI PARA JOGAR ZOMBIE ROLL](https://nsu-duxs.github.io/ZombieRolls-/ZombieRoll.html)
 
 # 🚀 Funcionalidades
 
