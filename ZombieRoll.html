@@ -202,7 +202,7 @@
                 amarelo: ['cerebro', 'cerebro', 'pegada', 'pegada', 'tiro', 'tiro'],
                 vermelho: ['cerebro', 'pegada', 'pegada', 'tiro', 'tiro', 'tiro'],
                 rosa: ['cerebro', 'pegada', 'pegada', 'pegada', 'tiro', 'tiro'],
-                branco: ['pegada', 'pegada', 'pegada', 'dois cerebros', 'dois tiros', 'capacete'],
+                branco: ['pegada', 'pegada', 'pegada', 'dois cerebros', 'dois tiros', 'tiro'],
                 'papai noel': ['cerebro', 'pegada', 'tiro', 'dois cerebros', 'capacete', 'energetico']
             };
             
@@ -360,7 +360,7 @@
                             currentRollMessage.push("dois tiros");
                             break;
                         case 'capacete':
-                            if (gameState.turnState.shots > 0) gameState.turnState.shots--;
+                            gameState.turnState.shots--;
                             currentRollMessage.push("um capacete salvador");
                             break;
                         case 'energetico':
