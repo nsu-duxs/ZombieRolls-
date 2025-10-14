@@ -116,14 +116,14 @@
                 <div class="flex-grow flex flex-row lg:flex-col justify-around items-center gap-6">
                     <!-- Placar de Cérebros -->
                     <div class="text-center">
-                        <!-- RESPONSIVE CHANGE: Ícones e fontes com tamanhos ajustáveis -->
-                        <div id="turn-brains-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto"></div>
+                        <!-- EMOJI CHANGE: Ícones e fontes com tamanhos ajustáveis -->
+                        <div id="turn-brains-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto flex items-center justify-center text-5xl sm:text-6xl"></div>
                         <p id="turn-brains-score" class="text-3xl sm:text-4xl font-bold mt-2">0</p>
                         <p class="text-gray-400">Cérebros</p>
                     </div>
                     <!-- Placar de Tiros -->
                     <div class="text-center">
-                        <div id="turn-shots-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto"></div>
+                        <div id="turn-shots-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto flex items-center justify-center text-5xl sm:text-6xl"></div>
                         <p id="turn-shots-score" class="text-3xl sm:text-4xl font-bold mt-2">0</p>
                          <p class="text-gray-400">Tiros</p>
                     </div>
@@ -186,21 +186,19 @@
             const winnerMessageEl = document.getElementById('winner-message');
             const playAgainBtn = document.getElementById('play-again-btn');
 
-            // --- ÍCONES SVG ---
+            // --- ÍCONES EMOJI ---
             const ICONS = {
-                cerebro: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-green-400 w-full h-full drop-shadow-lg"><path d="M12 2C9.25 2 7 4.25 7 7c0 1.5.63 2.82 1.63 3.75L7 12.18C4.24 13.5 3 15.62 3 18v2h18v-2c0-2.38-1.24-4.5-4-5.82l-1.63-1.43C16.37 9.82 17 8.5 17 7c0-2.75-2.25-5-5-5zm0 2c1.65 0 3 1.35 3 3s-1.35 3-3 3-3-1.35-3-3 1.35-3 3-3zM5.23 18c.4-1.36 1.48-2.52 3.03-3.19l1.73 1.44c-.2.53-.36 1.09-.45 1.66L5.23 18zm13.54 0l-4.31-.09c-.09-.57-.25-1.13-.45-1.66l1.73-1.44c1.56.67 2.63 1.83 3.03 3.19z"/></svg>`,
-                tiro: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-red-500 w-full h-full drop-shadow-lg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" transform="scale(1.2) translate(-2, -2)"/><circle cx="12" cy="12" r="3"/></svg>`,
-                pegada: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-yellow-400 w-full h-full drop-shadow-lg"><path d="M12 2c2.76 0 5 2.24 5 5 0 1.45-.62 2.75-1.59 3.69L12 15l-3.41-4.31C7.62 9.75 7 8.45 7 7c0-2.76 2.24-5 5-5zm0 2c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm-5 9.88V19h10v-5.12l-5 6.25-5-6.25z"/></svg>`,
-                capacete: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-blue-400 w-full h-full drop-shadow-lg"><path d="M21 9c0-4.97-4.03-9-9-9S3 4.03 3 9v2c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-2zm-2 0H5c0-3.86 3.14-7 7-7s7 3.14 7 7zM4 14h16v6c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2v-6z"/></svg>`,
-                energetico: `<svg viewBox="0 0 24 24" fill="currentColor" class="text-purple-400 w-full h-full drop-shadow-lg"><path d="M9 20h6v-2H9v2zm4-18h-2v2h2V2zm6.95 4.95l-1.41 1.41C17.63 9.27 17 10.59 17 12c0 2.76-2.24 5-5 5s-5-2.24-5-5c0-1.41.63-2.73 1.55-3.64L7.05 6.95C5.23 8.77 4 11.25 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-2.75-1.23-5.23-3.05-7.05z"/></svg>`,
-                player: `<svg viewBox="0 0 24 24" fill="currentColor" class="w-full h-full"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`,
-                skull: `<svg viewBox="0 0 24 24" fill="currentColor" class="w-full h-full text-red-500"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM9.5 15c-.83 0-1.5-.67-1.5-1.5S8.67 12 9.5 12s1.5.67 1.5 1.5S10.33 15 9.5 15zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 12 14.5 12s1.5.67 1.5 1.5S15.33 15 14.5 15zM12 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>`
+                cerebro: '🧠',
+                tiro: '💥',
+                pegada: '👣',
+                capacete: '⛑️',
+                energetico: '⚡',
+                'dois cerebros': '🧠🧠',
+                'dois tiros': '💥💥',
             };
-            ICONS['dois cerebros'] = `<div class="relative w-full h-full">${ICONS.cerebro}<span class="absolute top-0 right-0 -mt-1 -mr-1 bg-green-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 shadow-md">2x</span></div>`;
-            ICONS['dois tiros'] = `<div class="relative w-full h-full">${ICONS.tiro}<span class="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600 text-white text-xs font-bold rounded-full px-1.5 py-0.5 shadow-md">2x</span></div>`;
             
-            document.getElementById('turn-brains-icon').innerHTML = ICONS.cerebro;
-            document.getElementById('turn-shots-icon').innerHTML = ICONS.tiro;
+            document.getElementById('turn-brains-icon').textContent = ICONS.cerebro;
+            document.getElementById('turn-shots-icon').textContent = ICONS.tiro;
 
             // --- ESTADO DO JOGO ---
             let gameState = {};
@@ -266,7 +264,8 @@
                     turnState: {
                         brains: 0,
                         shots: 0,
-                        footprintDice: []
+                        footprintDice: [],
+                        isEnergized: false
                     },
                     isTurnOver: false
                 };
@@ -488,14 +487,15 @@
                     const iconHTML = ICONS[item.result] || '';
                     
                     const diceElement = document.createElement('div');
-                    diceElement.className = `dice ${diceColorClass} ${diceSizeClass} flex items-center justify-center p-2 sm:p-4 rounded-lg`;
+                    // EMOJI CHANGE: Adicionado text-4xl para controlar o tamanho do emoji e removido padding
+                    diceElement.className = `dice ${diceColorClass} ${diceSizeClass} flex items-center justify-center text-4xl sm:text-5xl md:text-6xl rounded-lg`;
                     
                     // Adiciona a classe de animação se o dado foi transformado
                     if (item.transformed) {
                         diceElement.classList.add('transformed-brain');
                     }
 
-                    diceElement.innerHTML = iconHTML;
+                    diceElement.textContent = iconHTML; // EMOJI CHANGE: Usar textContent em vez de innerHTML
                     diceAreaEl.appendChild(diceElement);
                 });
 
