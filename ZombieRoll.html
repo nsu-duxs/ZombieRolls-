@@ -385,9 +385,7 @@
                             break;
                         case 'capacete':
                             // Garante que o número de tiros não seja negativo
-                            if (gameState.turnState.shots > 0) {
-                                gameState.turnState.shots--;
-                            }
+                            gameState.turnState.shots--;
                             currentRollMessage.push("um capacete salvador");
                             break;
                         case 'energetico':
