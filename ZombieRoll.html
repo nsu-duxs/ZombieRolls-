@@ -268,7 +268,9 @@
                         shots: 0,
                         footprintDice: []
                     },
-                    isTurnOver: false
+                    isTurnOver: false,
+                    finalRound: false,
+                    finalRoundStarter: null
                 };
                 
                 setupContainer.classList.add('hidden');
@@ -408,11 +410,6 @@
                     gameState.turnState.brains = 0;
                     gameMessageEl.textContent = 'BOOM! Você levou 3 tiros e perdeu seus cérebros!';
                 }
-                
-                const totalBrains = gameState.players[gameState.currentPlayerIndex].score + gameState.turnState.brains;
-                if(totalBrains >= 13) {
-                    endTurn();
-                }
             }
             
             function endTurn() {
@@ -428,11 +425,14 @@
                 rollBtn.disabled = true;
                 stopBtn.disabled = true;
                 
-                if (gameState.players[gameState.currentPlayerIndex].score >= 13) {
-                    setTimeout(endGame, 2000);
-                } else {
-                    setTimeout(nextPlayer, 2000);
+                // Check if this player triggers the final round
+                if (gameState.players[gameState.currentPlayerIndex].score >= 13 && !gameState.finalRound) {
+                    gameState.finalRound = true;
+                    gameState.finalRoundStarter = gameState.currentPlayerIndex;
+                    gameMessageEl.textContent += ' Final round começou!';
                 }
+                
+                setTimeout(nextPlayer, 2000);
             }
 
             function nextPlayer() {
@@ -440,12 +440,33 @@
                 if (gameState.currentPlayerIndex === 0) {
                     gameState.turn++;
                 }
-                startTurn();
+                
+                // Check if final round is complete
+                if (gameState.finalRound && gameState.currentPlayerIndex === gameState.finalRoundStarter) {
+                    endGame();
+                } else {
+                    startTurn();
+                }
             }
             
             function endGame() {
-                const winner = gameState.players.reduce((prev, current) => (prev.score > current.score) ? prev : current);
-                winnerMessageEl.innerHTML = `<span class="font-bold text-white">${winner.name}</span> é o zumbi supremo com <span class="font-bold text-white">${winner.score}</span> cérebro${winner.score !== 1 ? 's' : ''}!`;
+                // Find the maximum score
+                const maxScore = Math.max(...gameState.players.map(p => p.score));
+                const winners = gameState.players.filter(p => p.score === maxScore);
+                
+                rollBtn.disabled = true;
+                stopBtn.disabled = true;
+                
+                if (winners.length > 1) {
+                    // Handle tie
+                    const winnerNames = winners.map(w => w.name).join(', ');
+                    winnerMessageEl.innerHTML = `Empate! <span class="font-bold text-white">${winnerNames}</span> empataram com <span class="font-bold text-white">${maxScore}</span> cérebro${maxScore !== 1 ? 's' : ''}!`;
+                } else {
+                    // Single winner
+                    const winner = winners[0];
+                    winnerMessageEl.innerHTML = `<span class="font-bold text-white">${winner.name}</span> é o zumbi supremo com <span class="font-bold text-white">${winner.score}</span> cérebro${winner.score !== 1 ? 's' : ''}!`;
+                }
+                
                 gameOverModal.classList.remove('hidden');
                 gameOverModal.classList.add('flex');
             }
