@@ -429,7 +429,7 @@
                 if (gameState.players[gameState.currentPlayerIndex].score >= 13 && !gameState.finalRound) {
                     gameState.finalRound = true;
                     gameState.finalRoundStarter = gameState.currentPlayerIndex;
-                    gameMessageEl.textContent += ' Final round começou!';
+                    gameMessageEl.textContent += ' Rodada final começou!';
                 }
                 
                 setTimeout(nextPlayer, 2000);
@@ -442,7 +442,7 @@
                 }
                 
                 // Check if final round is complete
-                if (gameState.finalRound && gameState.currentPlayerIndex === gameState.finalRoundStarter) {
+                if (gameState.finalRound && gameState.finalRoundStarter !== null && gameState.currentPlayerIndex === gameState.finalRoundStarter) {
                     endGame();
                 } else {
                     startTurn();
