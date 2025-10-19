@@ -65,13 +65,11 @@
         }
     </style>
 </head>
-<!-- RESPONSIVE CHANGE: Alterado para min-h-screen para permitir rolagem em telas pequenas se necessário -->
 <body class="bg-gray-900 text-white min-h-screen">
 
     <!-- Container para centralizar a tela de configuração inicial -->
     <div id="setup-container" class="min-h-screen flex items-center justify-center p-4">
         <div id="setup-screen" class="w-full max-w-md mx-auto p-6 md:p-8 bg-gray-800 rounded-2xl shadow-2xl modal-content">
-            <!-- RESPONSIVE CHANGE: Tamanho da fonte ajustado para telas menores -->
             <h1 class="font-creepster text-5xl sm:text-6xl text-center text-green-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">Zombie Roll</h1>
             <p class="text-center text-gray-400 mt-2 mb-6">Quantos zumbis famintos vão jogar?</p>
             
@@ -94,21 +92,17 @@
 
 
     <!-- Tela Principal do Jogo -->
-    <!-- RESPONSIVE CHANGE: min-h-screen garante que a tela ocupe toda a altura -->
     <div id="game-screen" class="hidden w-full min-h-screen flex flex-col p-2 sm:p-4 md:p-6 lg:p-8">
         <header class="flex flex-wrap justify-between items-center gap-4 mb-4">
             <div>
-                <!-- RESPONSIVE CHANGE: Tamanho da fonte ajustado -->
                 <h1 class="font-creepster text-4xl sm:text-5xl text-green-400">Zombie Roll</h1>
                 <p id="turn-info" class="text-base sm:text-lg text-gray-300">Turno de: <span id="current-player-name" class="font-bold text-white"></span></p>
             </div>
-            <!-- RESPONSIVE CHANGE: Placar agora permite scroll horizontal em telas muito pequenas -->
             <div id="scoreboard" class="w-full sm:w-auto bg-gray-800 rounded-lg p-2 sm:p-3 flex gap-2 sm:gap-4 text-sm overflow-x-auto">
                 <!-- Scores dos jogadores serão inseridos aqui -->
             </div>
         </header>
 
-        <!-- RESPONSIVE CHANGE: Ajustado o gap para diferentes tamanhos de tela -->
         <main class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             <!-- Coluna do Turno -->
             <div class="lg:col-span-1 bg-gray-800 rounded-2xl p-4 sm:p-6 flex flex-col">
@@ -116,7 +110,6 @@
                 <div class="flex-grow flex flex-row lg:flex-col justify-around items-center gap-6">
                     <!-- Placar de Cérebros -->
                     <div class="text-center">
-                        <!-- EMOJI CHANGE: Ícones e fontes com tamanhos ajustáveis -->
                         <div id="turn-brains-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto flex items-center justify-center text-5xl sm:text-6xl"></div>
                         <p id="turn-brains-score" class="text-3xl sm:text-4xl font-bold mt-2">0</p>
                         <p class="text-gray-400">Cérebros</p>
@@ -137,14 +130,12 @@
             <div class="lg:col-span-2 bg-gray-800/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between">
                 <div>
                      <h2 class="text-xl sm:text-2xl font-bold mb-6 text-center">Dados Rolados</h2>
-                      <!-- RESPONSIVE CHANGE: Gap e altura mínima ajustados para melhor encaixe -->
                       <div id="dice-area" class="grid grid-cols-3 gap-2 sm:gap-4 min-h-[100px] sm:min-h-[120px]">
                         <!-- Dados rolados aparecem aqui -->
                     </div>
                 </div>
                 <div class="mt-6 text-center">
                     <p id="game-message" class="min-h-[2rem] text-base sm:text-lg text-yellow-300 mb-4"></p>
-                    <!-- RESPONSIVE CHANGE: Layout dos botões já era bom, mantido -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
                         <button id="roll-btn" class="btn-zombie bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Rolar Dados</button>
                         <button id="stop-btn" class="btn-zombie bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Parar Turno</button>
@@ -267,7 +258,11 @@
                         footprintDice: [],
                         isEnergized: false
                     },
-                    isTurnOver: false
+                    isTurnOver: false,
+                    // --- MUDANÇA: Adicionadas variáveis para controlar a rodada final ---
+                    lastPlayerIndex: players.length - 1, 
+                    isFinalRound: false 
+                    // --- FIM DA MUDANÇA ---
                 };
                 
                 setupContainer.classList.add('hidden');
@@ -349,17 +344,15 @@
             function processRollResults(results) {
                 let currentRollMessage = [];
 
-                // LÓGICA DO ENERGÉTICO: Ativa o efeito se um energético for rolado. O efeito dura o turno todo.
                 if (results.some(item => item.result === 'energetico')) {
                     gameState.turnState.isEnergized = true;
                 }
 
-                // Se o turno estiver energizado, transforma as pegadas verdes desta rodada
                 if (gameState.turnState.isEnergized) {
                     results.forEach(item => {
                         if (item.color === 'verde' && item.result === 'pegada') {
-                            item.result = 'cerebro'; // Transforma a pegada em cérebro
-                            item.transformed = true; // Adiciona um marcador para a animação
+                            item.result = 'cerebro'; 
+                            item.transformed = true; 
                         }
                     });
                 }
@@ -368,7 +361,6 @@
                     switch(item.result) {
                         case 'cerebro':
                             gameState.turnState.brains++;
-                            // Mensagem customizada para pegada transformada
                             currentRollMessage.push(item.transformed ? "uma pegada energizada" : "um cérebro");
                             break;
                         case 'dois cerebros':
@@ -384,7 +376,6 @@
                             currentRollMessage.push("dois tiros");
                             break;
                         case 'capacete':
-                            // Garante que o número de tiros não seja negativo
                             gameState.turnState.shots--;
                             currentRollMessage.push("um capacete salvador");
                             break;
@@ -406,10 +397,7 @@
                     gameMessageEl.textContent = 'BOOM! Você levou 3 tiros e perdeu seus cérebros!';
                 }
                 
-                const totalBrains = gameState.players[gameState.currentPlayerIndex].score + gameState.turnState.brains;
-                if(totalBrains >= 13) {
-                    endTurn();
-                }
+                // --- MUDANÇA: Lógica de fim de turno foi removida daqui para a função endTurn() ---
             }
             
             function endTurn() {
@@ -425,11 +413,23 @@
                 rollBtn.disabled = true;
                 stopBtn.disabled = true;
                 
-                if (gameState.players[gameState.currentPlayerIndex].score >= 13) {
+                // --- MUDANÇA: Implementada a nova lógica de rodada final ---
+                const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+                // Verifica se este jogador ativou a rodada final (e ela ainda não estava ativa)
+                if (currentPlayer.score >= 13 && !gameState.isFinalRound) {
+                    gameState.isFinalRound = true;
+                    gameMessageEl.textContent += " Rodada final ativada!";
+                }
+
+                // Verifica se a rodada final acabou (se está ativa e o jogador atual é o último da ordem)
+                if (gameState.isFinalRound && gameState.currentPlayerIndex === gameState.lastPlayerIndex) {
                     setTimeout(endGame, 2000);
                 } else {
+                    // Jogo continua para o próximo jogador
                     setTimeout(nextPlayer, 2000);
                 }
+                // --- FIM DA MUDANÇA ---
             }
 
             function nextPlayer() {
@@ -452,7 +452,6 @@
                 const currentPlayer = gameState.players[gameState.currentPlayerIndex];
                 currentPlayerNameEl.textContent = currentPlayer.name;
                 
-                // Scoreboard
                 scoreboardEl.innerHTML = '';
                 gameState.players.forEach((player, index) => {
                     const isActive = index === gameState.currentPlayerIndex;
@@ -485,15 +484,13 @@
                     const iconHTML = ICONS[item.result] || '';
                     
                     const diceElement = document.createElement('div');
-                    // EMOJI CHANGE: Adicionado text-4xl para controlar o tamanho do emoji e removido padding
                     diceElement.className = `dice ${diceColorClass} ${diceSizeClass} flex items-center justify-center text-4xl sm:text-5xl md:text-6xl rounded-lg`;
                     
-                    // Adiciona a classe de animação se o dado foi transformado
                     if (item.transformed) {
                         diceElement.classList.add('transformed-brain');
                     }
 
-                    diceElement.textContent = iconHTML; // EMOJI CHANGE: Usar textContent em vez de innerHTML
+                    diceElement.textContent = iconHTML;
                     diceAreaEl.appendChild(diceElement);
                 });
 
@@ -518,4 +515,3 @@
     </script>
 </body>
 </html>
-
