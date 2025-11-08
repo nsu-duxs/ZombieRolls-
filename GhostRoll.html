@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título atualizado -->
+    <title>Ghost Roll</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fonte do título trocada para 'Eater' -->
+    <link href="https://fonts.googleapis.com/css2?family=Eater&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        /* Classe de fonte atualizada */
+        .font-eater {
+            font-family: 'Eater', cursive;
+        }
+        .dice {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .dice-placeholder {
+            border: 2px dashed rgba(255,255,255,0.2);
+        }
+        .btn-ghost {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-ghost:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        .btn-ghost:active {
+            transform: translateY(0);
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.75);
+        }
+        .modal-content {
+            animation: slide-up 0.4s ease-out;
+        }
+        @keyframes slide-up {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes roll-anim {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(0.9); }
+            75% { transform: rotate(270deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .rolling {
+            animation: roll-anim 0.5s ease-in-out;
+        }
+        
+        /* Efeito para o fantasma detectado (antigo energético) */
+        @keyframes transform-glow-detected {
+            0% { box-shadow: 0 0 5px rgba(103, 232, 249, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 20px rgba(103, 232, 249, 1), 0 0 25px rgba(5, 150, 168, 0.8); transform: scale(1.1); }
+            100% { box-shadow: 0 0 5px rgba(103, 232, 249, 0.5); transform: scale(1); }
+        }
+        .detected-ghost {
+            animation: transform-glow-detected 0.8s ease-in-out;
+        }
+        
+        /* Efeito para a insanidade purificada (antiga Colheita) */
+        @keyframes transform-revert {
+            0% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 20px rgba(251, 191, 36, 1), 0 0 25px rgba(245, 158, 11, 0.8); transform: scale(1.1); }
+            100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.5); transform: scale(1); }
+        }
+        .purified-insanity {
+            animation: transform-revert 0.8s ease-in-out;
+        }
+
+        /* Efeito para a Assombração (antigo Rastro de Morte) */
+        @keyframes transform-death {
+            0% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 20px rgba(239, 68, 68, 1), 0 0 25px rgba(220, 38, 38, 0.8); transform: scale(1.1); }
+            100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.5); transform: scale(1); }
+        }
+        .haunting-ghost {
+            animation: transform-death 0.8s ease-in-out;
+        }
+
+        /* Cor do dado da Casa (antigo ônibus) - Trocado para um gradiente sombrio */
+        .bg-house-die {
+            background: linear-gradient(145deg, #374151, #111827); /* de gray-700 para gray-900 */
+            color: white;
+            border: 1px solid #4b5563; /* gray-600 */
+        }
+
+        /* Modal de Mensagem Rápida */
+        .message-modal-content {
+            animation: slide-up 0.4s ease-out, fade-out 0.5s ease-in 2.5s forwards;
+        }
+        @keyframes fade-out {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+
+    <!-- Container da Configuração Inicial -->
+    <div id="setup-container" class="min-h-screen flex items-center justify-center p-4">
+        <div id="setup-screen" class="w-full max-w-md mx-auto p-6 md:p-8 bg-gray-800 rounded-2xl shadow-2xl modal-content">
+            <!-- Título e cor atualizados -->
+            <h1 class="font-eater text-5xl sm:text-6xl text-center text-cyan-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">Ghost Roll</h1>
+            <!-- Texto atualizado -->
+            <p class="text-center text-gray-400 mt-2 mb-6">Quantos caçadores corajosos vão jogar?</p>
+            
+            <div class="mb-4">
+                <label for="player-count" class="block mb-2 text-sm font-medium text-gray-300">Número de Caçadores</label>
+                <!-- Cor do foco atualizada -->
+                <select id="player-count" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5">
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                    <option>6</option>
+                </select>
+            </div>
+            
+            <div id="player-names-container" class="space-y-3 mb-6"></div>
+            
+            <!-- Botão e cor atualizados -->
+            <button id="start-game-btn" class="w-full btn-ghost bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg">Começar a Caçada!</button>
+        </div>
+    </div>
+
+
+    <!-- Tela Principal do Jogo -->
+    <div id="game-screen" class="hidden w-full min-h-screen flex flex-col p-2 sm:p-4 md:p-6 lg:p-8">
+        <header class="flex flex-wrap justify-between items-center gap-4 mb-4">
+            <div>
+                <!-- Título e cor atualizados -->
+                <h1 class="font-eater text-4xl sm:text-5xl text-cyan-300">Ghost Roll</h1>
+                <p id="turn-info" class="text-base sm:text-lg text-gray-300">Turno de: <span id="current-player-name" class="font-bold text-white"></span></p>
+            </div>
+            <div id="scoreboard" class="w-full sm:w-auto bg-gray-800 rounded-lg p-2 sm:p-3 flex gap-2 sm:gap-4 text-sm overflow-x-auto">
+                <!-- Scores dos jogadores -->
+            </div>
+        </header>
+
+        <main class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <!-- Coluna do Turno -->
+            <div class="lg:col-span-1 bg-gray-800 rounded-2xl p-4 sm:p-6 flex flex-col">
+                <h2 class="text-xl sm:text-2xl font-bold mb-4 text-center">Pontos do Turno</h2>
+                <div class="flex-grow flex flex-row lg:flex-col justify-around items-center gap-6">
+                    <!-- Placar de Fantasmas -->
+                    <div class="text-center">
+                        <div id="turn-brains-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto flex items-center justify-center text-5xl sm:text-6xl"></div>
+                        <p id="turn-brains-score" class="text-3xl sm:text-4xl font-bold mt-2">0</p>
+                        <!-- Texto atualizado -->
+                        <p class="text-gray-400">Fantasmas</p>
+                    </div>
+                    <!-- Placar de Insanidade -->
+                    <div class="text-center">
+                        <div id="turn-shots-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto flex items-center justify-center text-5xl sm:text-6xl"></div>
+                        <p id="turn-shots-score" class="text-3xl sm:text-4xl font-bold mt-2">0</p>
+                        <!-- Texto atualizado -->
+                         <p class="text-gray-400">Insanidade</p>
+                    </div>
+                </div>
+                 <!-- Texto atualizado -->
+                <div id="dice-cup-info" class="text-center mt-6 text-gray-400">
+                    Itens na mochila: <span id="dice-cup-count" class="font-bold text-white">16</span>
+                </div>
+            </div>
+
+            <!-- Coluna de Rolagem -->
+            <div class="lg:col-span-2 bg-gray-800/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between">
+                <div>
+                     <h2 class="text-xl sm:text-2xl font-bold mb-6 text-center">Itens Usados</h2>
+                     <div id="dice-area" class="grid grid-cols-3 gap-2 sm:gap-4 min-h-[100px] sm:min-h-[120px]">
+                         <!-- Dados rolados aparecem aqui -->
+                     </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <p id="game-message" class="min-h-[2rem] text-base sm:text-lg text-yellow-300 mb-4"></p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
+                        <!-- Botão atualizado -->
+                        <button id="roll-btn" class="btn-ghost bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Rolar Dados</button>
+                        <!-- Botão e texto atualizados -->
+                        <button id="bus-btn" class="hidden btn-ghost bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Entrar na Casa</button>
+                        <button id="stop-btn" class="btn-ghost bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Fugir (Parar)</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Fim de Jogo -->
+    <div id="game-over-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
+        <div class="modal-content bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
+            <!-- Título e cor atualizados -->
+            <h2 class="font-eater text-5xl text-cyan-300 mb-2">Fim de Jogo!</h2>
+            <p id="winner-message" class="text-xl mb-6"></p>
+            <!-- Botão e cor atualizados -->
+            <button id="play-again-btn" class="w-full btn-ghost bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg">Jogar Novamente</button>
+        </div>
+    </div>
+    
+    <!-- Modal de Mensagem Rápida -->
+    <div id="message-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-50">
+        <div class="message-modal-content bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
+            <h2 id="message-modal-title" class="font-eater text-5xl text-red-500 mb-2">---</h2>
+            <p id="message-modal-text" class="text-xl mb-6"></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- ELEMENTOS DO DOM ---
+            const setupContainer = document.getElementById('setup-container');
+            const gameScreen = document.getElementById('game-screen');
+            const playerCountSelect = document.getElementById('player-count');
+            const playerNamesContainer = document.getElementById('player-names-container');
+            const startGameBtn = document.getElementById('start-game-btn');
+            
+            const currentPlayerNameEl = document.getElementById('current-player-name');
+            const scoreboardEl = document.getElementById('scoreboard');
+            const turnBrainsScoreEl = document.getElementById('turn-brains-score');
+            const turnShotsScoreEl = document.getElementById('turn-shots-score');
+            const diceCupCountEl = document.getElementById('dice-cup-count');
+            const diceAreaEl = document.getElementById('dice-area');
+            const gameMessageEl = document.getElementById('game-message');
+            const rollBtn = document.getElementById('roll-btn');
+            const busBtn = document.getElementById('bus-btn'); // Renomeado no HTML, mas ID mantido para simplicidade
+            const stopBtn = document.getElementById('stop-btn');
+
+            const gameOverModal = document.getElementById('game-over-modal');
+            const winnerMessageEl = document.getElementById('winner-message');
+            const playAgainBtn = document.getElementById('play-again-btn');
+
+            const messageModal = document.getElementById('message-modal');
+            const messageModalTitle = document.getElementById('message-modal-title');
+            const messageModalText = document.getElementById('message-modal-text');
+
+
+            // --- ÍCONES EMOJI (Atualizados) ---
+            const ICONS = {
+                fantasma: '👻',
+                insanidade: '😱',
+                gosma: '🦠',
+                amuleto: '🧿',
+                detector: '📡',
+                'dois fantasmas': '👻👻',
+                'dois insanidade': '😱😱',
+                // ÍCONES DA CASA (antigo ônibus)
+                'porta fechada': '🚪',
+                'purificacao': '✨',
+                'assombracao': '☠️',
+                'susto': '💨',
+                'fantasma+insanidade': '👻😱',
+                'dois fantasmas+insanidade': '👻👻😱',
+                'tres fantasmas': '👻👻👻',
+            };
+            
+            // Ícones do placar atualizados
+            document.getElementById('turn-brains-icon').textContent = ICONS.fantasma;
+            document.getElementById('turn-shots-icon').textContent = ICONS.insanidade;
+
+            // --- ESTADO DO JOGO ---
+            let gameState = {};
+            let messageTimer = null; 
+
+            // --- LÓGICA DO JOGO ---
+            
+            // FACES DOS DADOS (Atualizadas)
+            const DICE_FACES = {
+                verde: ['fantasma', 'fantasma', 'fantasma', 'gosma', 'insanidade', 'insanidade'],
+                amarelo: ['fantasma', 'fantasma', 'gosma', 'gosma', 'insanidade', 'insanidade'],
+                vermelho: ['fantasma', 'gosma', 'gosma', 'insanidade', 'insanidade', 'insanidade'],
+                rosa: ['fantasma', 'gosma', 'gosma', 'gosma', 'insanidade', 'insanidade'],
+                branco: ['gosma', 'gosma', 'gosma', 'dois fantasmas', 'dois insanidade', 'insanidade'],
+                'vidente': ['fantasma', 'gosma', 'insanidade', 'dois fantasmas', 'amuleto', 'detector'] // 'papai noel' virou 'vidente'
+            };
+
+            // DADO DA CASA (12 LADOS) (Antigo Ônibus)
+            const HOUSE_DIE_FACES = [
+                'porta fechada',        // 1
+                'purificacao',          // 2
+                'fantasma',             // 3
+                'fantasma+insanidade',  // 4
+                'assombracao',          // 5
+                'dois insanidade',      // 6
+                'tres fantasmas',       // 7
+                'dois fantasmas+insanidade', // 8
+                'dois fantasmas',       // 9
+                'susto',                // 10
+                'insanidade',           // 11
+                'fantasma'              // 12
+            ];
+            
+            const DICE_COLORS = {
+                verde: 'bg-green-500',
+                amarelo: 'bg-yellow-400',
+                vermelho: 'bg-red-600',
+                rosa: 'bg-pink-400',
+                branco: 'bg-gray-100',
+                'vidente': 'bg-gradient-to-br from-red-500 to-white' // Cor mantida
+            };
+
+            function createDiceCup() {
+                // Dado 'vidente' atualizado
+                return [
+                    ...Array(6).fill('verde'), ...Array(4).fill('amarelo'),
+                    ...Array(3).fill('vermelho'), 'rosa', 'branco', 'vidente'
+                ];
+            }
+
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            // Nova função para rolar o dado da Casa
+            function rollHouseDie() {
+                return HOUSE_DIE_FACES[Math.floor(Math.random() * 12)];
+            }
+            
+            function updatePlayerNames() {
+                const count = parseInt(playerCountSelect.value);
+                playerNamesContainer.innerHTML = '';
+                for (let i = 0; i < count; i++) {
+                    // Ícone e texto atualizados
+                    playerNamesContainer.innerHTML += `
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400">🕵️</span>
+                            <input type="text" placeholder="Nome do Caçador ${i + 1}" class="player-name-input bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5" required value="Caçador ${i + 1}">
+                        </div>`;
+                }
+            }
+
+            function initializeGame() {
+                const playerInputs = document.querySelectorAll('.player-name-input');
+                const players = Array.from(playerInputs).map((input, index) => ({
+                    // Texto atualizado
+                    name: input.value || `Caçador ${index + 1}`,
+                    score: 0
+                }));
+
+                gameState = {
+                    players,
+                    currentPlayerIndex: 0,
+                    turn: 1,
+                    diceCup: [],
+                    turnState: {
+                        fantasma: 0,        // 'brains' -> 'fantasma'
+                        insanidade: 0,      // 'shots' -> 'insanidade'
+                        gosmaDice: [],      // 'footprintDice' -> 'gosmaDice'
+                        isEnergized: false, // Renomeado na lógica, mas a flag pode ser a mesma
+                        isHouseMode: false,   // 'isBusMode' -> 'isHouseMode'
+                        isHouseAvailable: true, // 'isBusAvailable' -> 'isHouseAvailable'
+                        isFirstRoll: true, 
+                    },
+                    isTurnOver: false,
+                    lastPlayerIndex: players.length - 1, 
+                    isFinalRound: false 
+                };
+                
+                setupContainer.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                gameScreen.classList.add('flex');
+
+                startTurn();
+            }
+            
+            function startTurn() {
+                // Estado do turno atualizado
+                gameState.turnState = { 
+                    fantasma: 0,
+                    insanidade: 0, 
+                    gosmaDice: [], 
+                    isEnergized: false, 
+                    isHouseMode: false,
+                    isHouseAvailable: true,
+                    isFirstRoll: true 
+                };
+                gameState.diceCup = shuffle(createDiceCup());
+                gameState.isTurnOver = false;
+
+                updateUI();
+                renderDice([], null); 
+                rollBtn.disabled = false;
+                stopBtn.disabled = false;
+                
+                busBtn.classList.add('hidden'); 
+                rollBtn.textContent = 'Rolar 3 Itens';
+                
+                gameMessageEl.textContent = `É a sua vez, ${gameState.players[gameState.currentPlayerIndex].name}!`;
+            }
+
+            // Função para alternar o modo Casa
+            function toggleHouseMode() {
+                if (!gameState.turnState.isHouseAvailable) return; 
+
+                if (gameState.turnState.isHouseMode) {
+                    gameState.turnState.isHouseAvailable = false; // Não pode voltar a entrar
+                }
+
+                gameState.turnState.isHouseMode = !gameState.turnState.isHouseMode;
+                updateButtonLabels();
+            }
+
+            // Função para atualizar os textos dos botões
+            function updateButtonLabels() {
+                if (!gameState.turnState.isFirstRoll) {
+                    if (gameState.turnState.isHouseAvailable) {
+                        busBtn.classList.remove('hidden'); 
+                    } else {
+                        busBtn.classList.add('hidden'); 
+                    }
+                } else {
+                    busBtn.classList.add('hidden'); 
+                }
+
+                if (gameState.turnState.isHouseMode) {
+                    // Textos atualizados
+                    rollBtn.textContent = 'Explorar (Casa)';
+                    busBtn.textContent = 'Sair da Casa';
+                    busBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                    busBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'text-gray-900'); 
+                } else {
+                    rollBtn.textContent = 'Rolar 3 Itens';
+                    busBtn.textContent = 'Entrar na Casa';
+                    busBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                    busBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-gray-900');
+                }
+                
+                if (!gameState.turnState.isHouseAvailable) {
+                    busBtn.classList.add('hidden'); 
+                    rollBtn.textContent = 'Rolar 3 Itens'; 
+                }
+            }
+
+
+            function rollDice() {
+                if (gameState.isTurnOver) return;
+                
+                if (gameState.turnState.isFirstRoll) {
+                    gameState.turnState.isFirstRoll = false;
+                }
+                
+                rollBtn.disabled = true;
+                stopBtn.disabled = true;
+                busBtn.classList.add('hidden'); // Esconde o botão da casa
+
+                diceAreaEl.innerHTML = '';
+                for (let i=0; i<3; i++) {
+                     diceAreaEl.innerHTML += `
+                         <div class="dice-placeholder h-20 sm:h-24 md:h-28 flex items-center justify-center rounded-lg rolling">
+                             <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-600 rounded-md animate-pulse"></div>
+                         </div>`;
+                }
+                
+                setTimeout(() => {
+                    performRoll(); // Lê o gameState.turnState.isHouseMode
+                    
+                    rollBtn.disabled = false;
+                    stopBtn.disabled = false;
+
+                    if (gameState.isTurnOver) {
+                        rollBtn.disabled = true;
+                        stopBtn.disabled = true;
+                        busBtn.classList.add('hidden');
+                        setTimeout(nextPlayer, 2500);
+                    } else {
+                        updateButtonLabels(); 
+                    }
+                }, 800);
+            }
+
+            // MODIFICADA para ler o estado isHouseMode
+            function performRoll() {
+                let diceToRoll = [];
+                let diceResults = [];
+                let houseResult = null; // 'busResult' -> 'houseResult'
+                let rollCount = 3; 
+
+                if (gameState.turnState.isHouseMode) { // Verifica se está no modo casa
+                    houseResult = rollHouseDie();
+                    rollCount = 2; // 1 casa + 2 dados
+
+                    // Regra das 3 gosmas (antigas pegadas)
+                    if (gameState.turnState.gosmaDice.length === 3) {
+                        diceToRoll.push(gameState.turnState.gosmaDice.pop());
+                        diceToRoll.push(gameState.turnState.gosmaDice.pop());
+                        gameState.turnState.gosmaDice = []; // Descarta a 3ª gosma
+                    } else {
+                        diceToRoll.push(...gameState.turnState.gosmaDice);
+                        gameState.turnState.gosmaDice = [];
+                    }
+                } else {
+                    // Rolagem normal
+                    rollCount = 3;
+                    diceToRoll.push(...gameState.turnState.gosmaDice);
+                    gameState.turnState.gosmaDice = [];
+                }
+                
+                const needed = rollCount - diceToRoll.length;
+                
+                if (gameState.diceCup.length < needed) {
+                    gameMessageEl.textContent = "Não há itens suficientes! Re-embaralhando os usados...";
+                    gameState.diceCup.push(...shuffle(createDiceCup()));
+                }
+
+                for(let i = 0; i < needed; i++) {
+                    diceToRoll.push(gameState.diceCup.shift());
+                }
+
+                for (const color of diceToRoll) {
+                    const faces = DICE_FACES[color];
+                    const result = faces[Math.floor(Math.random() * faces.length)];
+                    diceResults.push({ color, result });
+                }
+                
+                processRollResults([...diceResults], houseResult, diceResults);
+                updateUI();
+                renderDice(diceResults, houseResult); // Renderiza
+            }
+
+            // MODIFICADA para nova temática
+            function processRollResults(results, houseResult = null, originalResults) {
+                let currentRollMessage = [];
+                let forceStop = false;
+                let isHaunting = houseResult === 'assombracao'; // 'isDeathTrail' -> 'isHaunting'
+
+                if (houseResult) {
+                    currentRollMessage.push(`🏠 Casa: ${houseResult}!`);
+                    
+                    if (houseResult === 'purificacao') { // 'colheita' -> 'purificacao'
+                        // Mensagem de evento
+                        showTemporaryMessage("PURIFICAÇÃO!", "Toda insanidade desta rolagem virou gosma!", "yellow");
+                        results.forEach(item => {
+                            if (item.result === 'insanidade') { // 'tiro' -> 'insanidade'
+                                item.result = 'gosma'; // 'pegada' -> 'gosma'
+                                item.transformed = 'purified'; // 'reverted' -> 'purified'
+                            }
+                        });
+                    }
+                    if (houseResult === 'assombracao') { // 'rastro de morte' -> 'assombracao'
+                        showTemporaryMessage("ASSOMBRAÇÃO!", "Todas as gosmas na mesa viraram FANTASMAS!", "red");
+                    }
+                }
+
+                // Efeito Assombração (converte gosmas *antigas*)
+                if (isHaunting) {
+                    const oldSlime = gameState.turnState.gosmaDice.length;
+                    if (oldSlime > 0) {
+                        gameState.turnState.fantasma += oldSlime;
+                        currentRollMessage.push(`${oldSlime} gosmas antigas viraram fantasmas!`);
+                        gameState.turnState.gosmaDice = []; // Limpa
+                    }
+                }
+
+                // Processa detectores (antigos energéticos)
+                if (results.some(item => item.result === 'detector')) {
+                    gameState.turnState.isEnergized = true;
+                    showTemporaryMessage("DETECTOR!", "Gosmas verdes agora contam como FANTASMAS!", "purple"); // Cor 'purple' será trocada para 'cyan' no showTemporaryMessage
+                }
+                if (gameState.turnState.isEnergized) {
+                    results.forEach(item => {
+                        if (item.color === 'verde' && item.result === 'gosma') {
+                            item.result = 'fantasma'; 
+                            item.transformed = 'detected'; // 'brain' -> 'detected'
+                        }
+                    });
+                }
+
+                // Processa os dados normais
+                for (const item of results) {
+                    switch(item.result) {
+                        case 'fantasma':
+                            gameState.turnState.fantasma++;
+                            currentRollMessage.push(item.transformed === 'detected' ? "gosma detectada" : "fantasma");
+                            break;
+                        case 'dois fantasmas':
+                            gameState.turnState.fantasma += 2;
+                            currentRollMessage.push("dois fantasmas");
+                            break;
+                        case 'insanidade':
+                            gameState.turnState.insanidade++;
+                            currentRollMessage.push("insanidade");
+                            break;
+                        case 'dois insanidade':
+                            gameState.turnState.insanidade += 2;
+                            currentRollMessage.push("dois insanidade");
+                            break;
+                        case 'amuleto': // 'capacete' -> 'amuleto'
+                            if (gameState.turnState.insanidade > 0) gameState.turnState.insanidade--;
+                            currentRollMessage.push("amuleto protetor");
+                            showTemporaryMessage("AMULETO!", "Uma insanidade foi bloqueada! Que sorte!", "blue");
+                            break;
+                        case 'detector': // 'energetico' -> 'detector'
+                            currentRollMessage.push("detector ativado!");
+                            break;
+                        case 'gosma': // 'pegada' -> 'gosma'
+                            // Efeito Assombração (converte gosmas *novas*)
+                            if (isHaunting && item.transformed !== 'purified') {
+                                item.result = 'fantasma';
+                                item.transformed = 'haunting'; // 'death' -> 'haunting'
+                                gameState.turnState.fantasma++;
+                                currentRollMessage.push("nova gosma virou fantasma");
+                            } else {
+                                // Lógica normal
+                                gameState.turnState.gosmaDice.push(item.color);
+                                currentRollMessage.push(item.transformed === 'purified' ? "insanidade purificada" : "gosma");
+                            }
+                            break;
+                    }
+                }
+
+                // Processa os efeitos do dado da casa
+                if (houseResult && houseResult !== 'purificacao' && houseResult !== 'assombracao') {
+                    switch (houseResult) {
+                        case 'porta fechada': // 'pare' -> 'porta fechada'
+                            forceStop = true;
+                            showTemporaryMessage("PORTA FECHADA!", "A porta se fechou. O seu turno acaba aqui!", "red");
+                            break;
+                        case 'fantasma':
+                            gameState.turnState.fantasma++;
+                            break;
+                        case 'fantasma+insanidade':
+                            gameState.turnState.fantasma++;
+                            gameState.turnState.insanidade++;
+                            break;
+                        case 'dois insanidade':
+                            gameState.turnState.insanidade += 2;
+                            break;
+                        case 'tres fantasmas':
+                            gameState.turnState.fantasma += 3;
+                            break;
+                        case 'dois fantasmas+insanidade':
+                            gameState.turnState.fantasma += 2;
+                            gameState.turnState.insanidade++;
+                            break;
+                        case 'dois fantasmas':
+                            gameState.turnState.fantasma += 2;
+                            break;
+                        case 'susto': // 'atropelamento' -> 'susto'
+                            gameState.turnState.isHouseAvailable = false; 
+                            gameState.turnState.isHouseMode = false;   
+                            currentRollMessage.push("Assustado! Você foi expulso da casa.");
+                            
+                            let lostGhost = false;
+                            
+                            if (gameState.turnState.fantasma > 0) {
+                                gameState.turnState.fantasma--;
+                                lostGhost = true;
+                                currentRollMessage.push("Perdeu 1 fantasma!");
+                            }
+                            
+                            showTemporaryMessage(
+                                "ASSUSTADO!", 
+                                `Você foi expulso! ${lostGhost ? "Perdeu 1 fantasma." : "Mas escapou sem perder fantasmas!"}`,
+                                "red"
+                            );
+                            
+                            break;
+                        case 'insanidade':
+                            gameState.turnState.insanidade++;
+                            break;
+                    }
+                }
+                
+                gameMessageEl.textContent = `Você conseguiu: ${currentRollMessage.join(', ')}!`;
+
+                if (gameState.turnState.insanidade >= 3) {
+                    gameState.isTurnOver = true;
+                    gameState.turnState.fantasma = 0;
+                    gameMessageEl.textContent = 'QUASE LOUCO! Você acumulou 3 insanidades e fugiu!';
+                    showTemporaryMessage("ENLOUQUECEU!", "Você acumulou 3 ou mais insanidades e perdeu tudo!", "red");
+                }
+
+                if (forceStop && !gameState.isTurnOver) {
+                     gameMessageEl.textContent = "A porta se fechou! Fim do turno.";
+                     setTimeout(endTurn, 2000);
+                }
+            }
+            
+            // Função de mensagem com cores atualizadas
+            function showTemporaryMessage(title, text, color = 'red') {
+                if (messageTimer) {
+                    clearTimeout(messageTimer);
+                    messageModal.classList.add('hidden');
+                    messageModal.classList.remove('flex');
+                }
+
+                const titleColorClasses = {
+                    red: 'text-red-500',
+                    blue: 'text-blue-400',
+                    purple: 'text-cyan-400', // Trocado para ciano
+                    yellow: 'text-yellow-400',
+                };
+                
+                messageModalTitle.classList.remove('text-red-500', 'text-blue-400', 'text-cyan-400', 'text-yellow-400');
+                messageModalTitle.classList.add(titleColorClasses[color] || 'text-red-500');
+
+                messageModalTitle.textContent = title;
+                messageModalText.textContent = text;
+                messageModal.classList.remove('hidden');
+                messageModal.classList.add('flex');
+
+                messageTimer = setTimeout(() => {
+                    messageModal.classList.add('hidden');
+                    messageModal.classList.remove('flex');
+                    messageTimer = null; 
+                }, 3000); 
+            }
+
+            function endTurn() {
+                if(gameState.isTurnOver) {
+                    nextPlayer();
+                    return;
+                }
+                
+                const fantasmasConquistados = gameState.turnState.fantasma;
+                gameState.players[gameState.currentPlayerIndex].score += fantasmasConquistados;
+                gameMessageEl.textContent = `Você capturou ${fantasmasConquistados} fantasma${fantasmasConquistados !== 1 ? 's' : ''}!`;
+                
+                rollBtn.disabled = true;
+                stopBtn.disabled = true;
+                busBtn.classList.add('hidden'); 
+                
+                const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+                if (currentPlayer.score >= 13 && !gameState.isFinalRound) {
+                    gameState.isFinalRound = true;
+                    gameMessageEl.textContent += " Rodada final ativada!";
+                }
+
+                if (gameState.isFinalRound && gameState.currentPlayerIndex === gameState.lastPlayerIndex) {
+                    updateUI();
+                    setTimeout(endGame, 2000);
+                } else {
+                    setTimeout(nextPlayer, 2000);
+                }
+            }
+
+            function nextPlayer() {
+                gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+                if (gameState.currentPlayerIndex === 0) {
+                    gameState.turn++;
+                }
+                startTurn();
+            }
+            
+            function endGame() {
+                const winner = gameState.players.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+                
+                // Mensagem de vencedor atualizada
+                winnerMessageEl.innerHTML = `<span class="font-bold text-white">${winner.name}</span> é o caçador supremo com <span class="font-bold text-white">${winner.score}</span> fantasma${winner.score !== 1 ? 's' : ''}!`;
+                gameOverModal.classList.remove('hidden');
+                gameOverModal.classList.add('flex');
+            }
+
+            // --- FUNÇÕES DE RENDERIZAÇÃO ---
+            function updateUI() {
+                const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+                currentPlayerNameEl.textContent = currentPlayer.name;
+                
+                scoreboardEl.innerHTML = '';
+                gameState.players.forEach((player, index) => {
+                    const isActive = index === gameState.currentPlayerIndex;
+                    // Cor do placar ativo atualizada
+                    scoreboardEl.innerHTML += `
+                        <div class="text-center p-2 rounded-md ${isActive ? 'bg-cyan-500/30' : ''} flex-shrink-0">
+                            <p class="font-semibold truncate max-w-[80px] sm:max-w-[100px]">${player.name}</p>
+                            <p class="text-xl font-bold">${player.score}</p>
+                        </div>
+                    `;
+                });
+                
+                // Scores do turno atualizados
+                turnBrainsScoreEl.textContent = gameState.turnState.fantasma;
+                turnShotsScoreEl.textContent = gameState.turnState.insanidade;
+                diceCupCountEl.textContent = gameState.diceCup.length;
+            }
+
+            // MODIFICADA para renderizar o dado da Casa e novos efeitos
+            function renderDice(results, houseResult = null) {
+                diceAreaEl.innerHTML = '';
+                const diceSizeClass = 'h-20 sm:h-24 md:h-28';
+                
+                if ((!results || results.length === 0) && !houseResult) {
+                     for (let i=0; i<3; i++) {
+                          diceAreaEl.innerHTML += `<div class="dice-placeholder ${diceSizeClass} rounded-lg"></div>`;
+                     }
+                    return;
+                }
+
+                // Renderiza o dado da Casa
+                if (houseResult) {
+                    const diceElement = document.createElement('div');
+                    // Classe CSS do dado da casa
+                    diceElement.className = `dice bg-house-die ${diceSizeClass} flex items-center justify-center text-4xl sm:text-5xl md:text-6xl rounded-lg`;
+                    diceElement.textContent = ICONS[houseResult] || (ICONS[houseResult.split('+')[0]] || houseResult);
+                    diceAreaEl.appendChild(diceElement);
+                }
+
+                // Renderiza os dados normais
+                results.forEach(item => {
+                    const diceColorClass = DICE_COLORS[item.color] || 'bg-gray-500';
+                    const iconHTML = ICONS[item.result] || '';
+                    
+                    const diceElement = document.createElement('div');
+                    diceElement.className = `dice ${diceColorClass} ${diceSizeClass} flex items-center justify-center text-4xl sm:text-5xl md:text-6xl rounded-lg`;
+                    
+                    // Nomes dos efeitos atualizados
+                    if (item.transformed === 'detected') {
+                        diceElement.classList.add('detected-ghost');
+                    } else if (item.transformed === 'purified') {
+                        diceElement.classList.add('purified-insanity');
+                    } else if (item.transformed === 'haunting') { 
+                        diceElement.classList.add('haunting-ghost');
+                    }
+
+                    diceElement.textContent = iconHTML;
+                    diceAreaEl.appendChild(diceElement);
+                });
+
+                // Preencher com placeholders
+                const totalDice = (houseResult ? 1 : 0) + results.length;
+                 for (let i = 0; i < 3 - totalDice; i++) {
+                      diceAreaEl.innerHTML += `<div class="dice-placeholder ${diceSizeClass} rounded-lg"></div>`;
+                 }
+            }
+
+            // --- EVENT LISTENERS ---
+            playerCountSelect.addEventListener('change', updatePlayerNames);
+            startGameBtn.addEventListener('click', initializeGame);
+            
+            rollBtn.addEventListener('click', rollDice); 
+            busBtn.addEventListener('click', toggleHouseMode); // 'toggleBusMode' -> 'toggleHouseMode'
+            
+            stopBtn.addEventListener('click', endTurn);
+            playAgainBtn.addEventListener('click', () => {
+                location.reload();
+            });
+
+            // --- INICIALIZAÇÃO ---
+            updatePlayerNames();
+        });
+    </script>
+</body>
+</html>
