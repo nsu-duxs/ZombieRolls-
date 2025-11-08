@@ -74,11 +74,31 @@
             animation: transform-revert 0.8s ease-in-out;
         }
 
+        /* Efeito para o Rastro de Morte */
+        @keyframes transform-death {
+            0% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 20px rgba(239, 68, 68, 1), 0 0 25px rgba(220, 38, 38, 0.8); transform: scale(1.1); }
+            100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.5); transform: scale(1); }
+        }
+        .death-trail-brain {
+            animation: transform-death 0.8s ease-in-out;
+        }
+
+
         /* Cor do dado de ônibus */
         .bg-bus-die {
             background: linear-gradient(145deg, #4B0082, #8A2BE2);
             color: white;
             border: 1px solid #c084fc;
+        }
+
+        /* NOVO: Modal de Mensagem Rápida */
+        .message-modal-content {
+            animation: slide-up 0.4s ease-out, fade-out 0.5s ease-in 2.5s forwards;
+        }
+        @keyframes fade-out {
+            from { opacity: 1; }
+            to { opacity: 0; }
         }
     </style>
 </head>
@@ -158,7 +178,6 @@
                     <p id="game-message" class="min-h-[2rem] text-base sm:text-lg text-yellow-300 mb-4"></p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
                         <button id="roll-btn" class="btn-zombie bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Rolar Dados</button>
-                        <!-- BOTÃO DO ÔNIBUS ADICIONADO -->
                         <button id="bus-btn" class="hidden btn-zombie bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Entrar no Ônibus</button>
                         <button id="stop-btn" class="btn-zombie bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg flex-grow sm:flex-grow-0">Parar Turno</button>
                     </div>
@@ -168,7 +187,7 @@
     </div>
 
     <!-- Modal de Fim de Jogo -->
-    <div id="game-over-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4">
+    <div id="game-over-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-40">
         <!-- ... (código do modal inalterado) ... -->
         <div class="modal-content bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
             <h2 class="font-creepster text-5xl text-green-400 mb-2">Fim de Jogo!</h2>
@@ -177,6 +196,14 @@
         </div>
     </div>
     
+    <!-- NOVO: Modal de Mensagem Rápida -->
+    <div id="message-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-50">
+        <div class="message-modal-content bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
+            <h2 id="message-modal-title" class="font-creepster text-5xl text-red-500 mb-2">---</h2>
+            <p id="message-modal-text" class="text-xl mb-6"></p>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- ELEMENTOS DO DOM ---
@@ -194,12 +221,17 @@
             const diceAreaEl = document.getElementById('dice-area');
             const gameMessageEl = document.getElementById('game-message');
             const rollBtn = document.getElementById('roll-btn');
-            const busBtn = document.getElementById('bus-btn'); // NOVO
+            const busBtn = document.getElementById('bus-btn');
             const stopBtn = document.getElementById('stop-btn');
 
             const gameOverModal = document.getElementById('game-over-modal');
             const winnerMessageEl = document.getElementById('winner-message');
             const playAgainBtn = document.getElementById('play-again-btn');
+
+            // NOVO: Elementos do Modal de Mensagem
+            const messageModal = document.getElementById('message-modal');
+            const messageModalTitle = document.getElementById('message-modal-title');
+            const messageModalText = document.getElementById('message-modal-text');
 
 
             // --- ÍCONES EMOJI ---
@@ -252,6 +284,7 @@
                 'atropelamento',    // 10
                 'tiro',             // 11
                 'cerebro'           // 12
+
             ];
             
             const DICE_COLORS = {
@@ -317,8 +350,9 @@
                         shots: 0,
                         footprintDice: [],
                         isEnergized: false,
-                        isBusTurn: false,     // Se esta *rolagem* é do ônibus
-                        isBusAvailable: true, // Se o ônibus pode ser usado *neste turno*
+                        isBusMode: false,     
+                        isBusAvailable: true, 
+                        isFirstRoll: true, // NOVO: Controla se é a primeira rolagem
                     },
                     isTurnOver: false,
                     lastPlayerIndex: players.length - 1, 
@@ -339,8 +373,9 @@
                     shots: 0, 
                     footprintDice: [], 
                     isEnergized: false, 
-                    isBusTurn: false,
-                    isBusAvailable: true // Ônibus está sempre disponível no início do turno
+                    isBusMode: false,
+                    isBusAvailable: true,
+                    isFirstRoll: true // Reseta para a primeira rolagem
                 };
                 gameState.diceCup = shuffle(createDiceCup());
                 gameState.isTurnOver = false;
@@ -349,20 +384,71 @@
                 renderDice([], null); // Limpa os dados
                 rollBtn.disabled = false;
                 stopBtn.disabled = false;
+                
+                // MODIFICADO: Botões são configurados manualmente no início
                 busBtn.classList.add('hidden'); // Esconde o ônibus no início
-                rollBtn.textContent = 'Rolar Dados';
+                rollBtn.textContent = 'Rolar 3 Dados';
+                
                 gameMessageEl.textContent = `É a sua vez, ${gameState.players[gameState.currentPlayerIndex].name}!`;
             }
 
-            // MODIFICADA para aceitar flag
-            function rollDice(isBusRoll = false) {
+            // Função para alternar o modo ônibus
+            function toggleBusMode() {
+                if (!gameState.turnState.isBusAvailable) return; 
+
+                // NOVO: Se está a SAIR do ônibus, torna-se permanente
+                if (gameState.turnState.isBusMode) {
+                    gameState.turnState.isBusAvailable = false; // Não pode voltar a entrar
+                }
+
+                gameState.turnState.isBusMode = !gameState.turnState.isBusMode;
+                updateButtonLabels();
+            }
+
+            // Função para atualizar os textos e cores dos botões
+            function updateButtonLabels() {
+                // Se não for a primeira rolagem, mostra o botão do ônibus
+                if (!gameState.turnState.isFirstRoll) {
+                    if (gameState.turnState.isBusAvailable) {
+                        busBtn.classList.remove('hidden'); 
+                    } else {
+                        busBtn.classList.add('hidden'); // Esconde se atropelado ou se já saiu
+                    }
+                } else {
+                    busBtn.classList.add('hidden'); // Mantém escondido na primeira rolagem
+                }
+
+                if (gameState.turnState.isBusMode) {
+                    rollBtn.textContent = 'Rolar (Ônibus)';
+                    busBtn.textContent = 'Sair do Ônibus';
+                    busBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                    busBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'text-gray-900'); // Sair = Amarelo
+                } else {
+                    rollBtn.textContent = 'Rolar 3 Dados';
+                    busBtn.textContent = 'Entrar no Ônibus';
+                    busBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                    busBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-gray-900'); // Entrar = Roxo
+                }
+                
+                if (!gameState.turnState.isBusAvailable) {
+                    busBtn.classList.add('hidden'); 
+                    rollBtn.textContent = 'Rolar 3 Dados'; // Força rolar normal
+                }
+            }
+
+
+            // MODIFICADA para não aceitar flag
+            function rollDice() {
                 if (gameState.isTurnOver) return;
+                
+                // NOVO: Marca que não é mais a primeira rolagem
+                if (gameState.turnState.isFirstRoll) {
+                    gameState.turnState.isFirstRoll = false;
+                }
                 
                 rollBtn.disabled = true;
                 stopBtn.disabled = true;
                 busBtn.classList.add('hidden'); // Esconde o botão do ônibus durante a rolagem
-
-                gameState.isBusTurn = isBusRoll; // Define se a próxima rolagem é de ônibus
 
                 // Animação de rolar
                 diceAreaEl.innerHTML = '';
@@ -374,7 +460,7 @@
                 }
                 
                 setTimeout(() => {
-                    performRoll(); // performRoll agora lida com os dois casos
+                    performRoll(); // performRoll agora lê o gameState.turnState.isBusMode
                     
                     rollBtn.disabled = false;
                     stopBtn.disabled = false;
@@ -385,34 +471,28 @@
                         busBtn.classList.add('hidden');
                         setTimeout(nextPlayer, 2500);
                     } else {
-                        // Se o turno não acabou e o ônibus ainda está disponível
-                        if (gameState.turnState.isBusAvailable) {
-                            busBtn.classList.remove('hidden');
-                        }
+                        updateButtonLabels(); // Atualiza os botões (mostrar/esconder/mudar texto)
                     }
                 }, 800);
             }
 
-            // MODIFICADA para lidar com rolagem normal e de ônibus
+            // MODIFICADA para ler o estado isBusMode
             function performRoll() {
                 let diceToRoll = [];
                 let diceResults = [];
                 let busResult = null;
-                let rollCount = 3; // Padrão de 3 dados
+                let rollCount = 3; 
 
-                if (gameState.isBusTurn) {
-                    gameState.turnState.isBusAvailable = false; // Ônibus só pode ser usado uma vez
+                if (gameState.turnState.isBusMode) { // Verifica se está no modo ônibus
                     busResult = rollBusDie();
-                    rollCount = 2; // Rolagem de ônibus é 1 ônibus + 2 dados normais
+                    rollCount = 2; // 1 ônibus + 2 dados
 
                     // Regra das 3 pegadas
                     if (gameState.turnState.footprintDice.length === 3) {
-                        // Re-rola 2, descarta 1
                         diceToRoll.push(gameState.turnState.footprintDice.pop());
                         diceToRoll.push(gameState.turnState.footprintDice.pop());
-                        gameState.turnState.footprintDice = []; // Limpa o dado descartado
+                        gameState.turnState.footprintDice = []; // Descarta a 3ª pegada
                     } else {
-                        // Rolagem normal de ônibus: re-rola pegadas existentes
                         diceToRoll.push(...gameState.turnState.footprintDice);
                         gameState.turnState.footprintDice = [];
                     }
@@ -440,21 +520,23 @@
                     diceResults.push({ color, result });
                 }
                 
-                processRollResults(diceResults, busResult);
+                // ATENÇÃO: Passa uma *cópia* de diceResults para processRollResults
+                // para que possamos modificar a original (diceResults) dentro da lógica de atropelamento
+                // e afetar o renderDice
+                processRollResults([...diceResults], busResult, diceResults);
                 updateUI();
-                renderDice(diceResults, busResult);
-                
-                gameState.isBusTurn = false; // Reseta a flag
+                renderDice(diceResults, busResult); // Renderiza a 'diceResults' original (que pode ter sido modificada)
             }
 
-            // MODIFICADA para aceitar resultado do ônibus
-            function processRollResults(results, busResult = null) {
+            // MODIFICADA para aceitar 'originalResults' para manipulação
+            function processRollResults(results, busResult = null, originalResults) {
                 let currentRollMessage = [];
                 let forceStop = false;
+                let isDeathTrail = busResult === 'rastro de morte';
 
                 if (busResult) {
                     currentRollMessage.push(`🚌 Ônibus: ${busResult}!`);
-                    // Efeito 'Colheita' (antes dos tiros serem contados)
+                    
                     if (busResult === 'colheita') {
                         results.forEach(item => {
                             if (item.result === 'tiro') {
@@ -462,6 +544,16 @@
                                 item.transformed = 'reverted'; // Flag para efeito visual
                             }
                         });
+                    }
+                }
+
+                // Efeito Rastro de Morte (converte pegadas *antigas*)
+                if (isDeathTrail) {
+                    const oldPegs = gameState.turnState.footprintDice.length;
+                    if (oldPegs > 0) {
+                        gameState.turnState.brains += oldPegs;
+                        currentRollMessage.push(`${oldPegs} pegadas antigas viraram cérebros!`);
+                        gameState.turnState.footprintDice = []; // Limpa
                     }
                 }
 
@@ -505,14 +597,23 @@
                             currentRollMessage.push("energético!");
                             break;
                         case 'pegada':
-                            gameState.turnState.footprintDice.push(item.color);
-                            currentRollMessage.push(item.transformed === 'reverted' ? "tiro revertido" : "pegada");
+                            // Efeito Rastro de Morte (converte pegadas *novas*)
+                            if (isDeathTrail && item.transformed !== 'reverted') {
+                                item.result = 'cerebro';
+                                item.transformed = 'death'; // Flag para efeito visual
+                                gameState.turnState.brains++;
+                                currentRollMessage.push("nova pegada virou cérebro");
+                            } else {
+                                // Lógica normal
+                                gameState.turnState.footprintDice.push(item.color);
+                                currentRollMessage.push(item.transformed === 'reverted' ? "tiro revertido" : "pegada");
+                            }
                             break;
                     }
                 }
 
-                // Processa os efeitos do dado do ônibus (depois dos dados normais)
-                if (busResult) {
+                // Processa os efeitos do dado do ônibus (que não são de conversão)
+                if (busResult && busResult !== 'colheita' && busResult !== 'rastro de morte') {
                     switch (busResult) {
                         case 'pare':
                             forceStop = true;
@@ -523,14 +624,6 @@
                         case 'cerebro+tiro':
                             gameState.turnState.brains++;
                             gameState.turnState.shots++;
-                            break;
-                        case 'rastro de morte':
-                            const pegs = gameState.turnState.footprintDice.length;
-                            if (pegs > 0) {
-                                gameState.turnState.brains += pegs;
-                                gameState.turnState.footprintDice = [];
-                                currentRollMessage.push(`${pegs} pegadas viraram cérebros!`);
-                            }
                             break;
                         case 'dois tiros':
                             gameState.turnState.shots += 2;
@@ -546,12 +639,28 @@
                             gameState.turnState.brains += 2;
                             break;
                         case 'atropelamento':
-                            // gameState.turnState.isBusAvailable já é false
-                            currentRollMessage.push("Atropelado!");
-                            if (gameState.turnState.brains > 1) {
+                            gameState.turnState.isBusAvailable = false; // Bloqueia o ônibus
+                            gameState.turnState.isBusMode = false;      // Força a saída
+                            currentRollMessage.push("Atropelado! Você foi ejetado do ônibus.");
+                            
+                            let lostBrain = false;
+                            // let returnedDieColor = null; // REMOVIDO
+
+                            // LÓGICA MODIFICADA: Verifica se tem 1 cérebro ou mais (em vez de > 1)
+                            if (gameState.turnState.brains > 0) {
                                 gameState.turnState.brains--;
+                                lostBrain = true;
                                 currentRollMessage.push("Perdeu 1 cérebro!");
+
+                                // LÓGICA DE DEVOLVER DADO REMOVIDA
                             }
+                            
+                            // Chama a "animação" (modal) - Mensagem atualizada
+                            showTemporaryMessage(
+                                "ATROPELADO!", 
+                                `Você foi ejetado! ${lostBrain ? "Perdeu 1 cérebro." : "Mas escapou sem perder cérebros!"}`
+                            );
+                            
                             break;
                         case 'tiro':
                             gameState.turnState.shots++;
@@ -569,11 +678,24 @@
 
                 if (forceStop && !gameState.isTurnOver) {
                      gameMessageEl.textContent = "O ônibus parou! Fim do turno.";
-                     // Atraso para o jogador ver a mensagem antes de pular o turno
                      setTimeout(endTurn, 2000);
                 }
             }
             
+            // NOVO: Função para mostrar modal de mensagem
+            function showTemporaryMessage(title, text) {
+                messageModalTitle.textContent = title;
+                messageModalText.textContent = text;
+                messageModal.classList.remove('hidden');
+                messageModal.classList.add('flex');
+
+                // Esconde o modal e o backdrop após 3 segundos
+                setTimeout(() => {
+                    messageModal.classList.add('hidden');
+                    messageModal.classList.remove('flex');
+                }, 3000); // O modal vai sumir 0.5s antes por causa da animação fade-out
+            }
+
             function endTurn() {
                 // ... (lógica de fim de turno e rodada final inalterada) ...
                 if(gameState.isTurnOver) {
@@ -587,7 +709,7 @@
                 
                 rollBtn.disabled = true;
                 stopBtn.disabled = true;
-                busBtn.classList.add('hidden');
+                busBtn.classList.add('hidden'); // Esconde o botão do ônibus
                 
                 const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
@@ -644,7 +766,7 @@
                 diceCupCountEl.textContent = gameState.diceCup.length;
             }
 
-            // MODIFICADA para renderizar o dado do ônibus
+            // MODIFICADA para renderizar o dado do ônibus e novo efeito
             function renderDice(results, busResult = null) {
                 diceAreaEl.innerHTML = '';
                 const diceSizeClass = 'h-20 sm:h-24 md:h-28';
@@ -660,7 +782,6 @@
                 if (busResult) {
                     const diceElement = document.createElement('div');
                     diceElement.className = `dice bg-bus-die ${diceSizeClass} flex items-center justify-center text-4xl sm:text-5xl md:text-6xl rounded-lg`;
-                    // Usa ícone ou o próprio resultado como texto
                     diceElement.textContent = ICONS[busResult] || (ICONS[busResult.split('+')[0]] || busResult);
                     diceAreaEl.appendChild(diceElement);
                 }
@@ -677,6 +798,8 @@
                         diceElement.classList.add('transformed-brain');
                     } else if (item.transformed === 'reverted') {
                         diceElement.classList.add('reverted-shot');
+                    } else if (item.transformed === 'death') { // NOVO EFEITO
+                        diceElement.classList.add('death-trail-brain');
                     }
 
                     diceElement.textContent = iconHTML;
@@ -694,9 +817,9 @@
             playerCountSelect.addEventListener('change', updatePlayerNames);
             startGameBtn.addEventListener('click', initializeGame);
             
-            // Modificados para passar a flag
-            rollBtn.addEventListener('click', () => rollDice(false));
-            busBtn.addEventListener('click', () => rollDice(true));
+            // Modificados para os novos handlers
+            rollBtn.addEventListener('click', rollDice); // Chama sem parâmetro
+            busBtn.addEventListener('click', toggleBusMode); // Chama o alternador
             
             stopBtn.addEventListener('click', endTurn);
             playAgainBtn.addEventListener('click', () => {
