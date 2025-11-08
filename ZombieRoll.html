@@ -171,7 +171,7 @@
                 <div>
                      <h2 class="text-xl sm:text-2xl font-bold mb-6 text-center">Dados Rolados</h2>
                      <div id="dice-area" class="grid grid-cols-3 gap-2 sm:gap-4 min-h-[100px] sm:min-h-[120px]">
-                         <!-- Dados rolados aparecem aqui -->
+                          <!-- Dados rolados aparecem aqui -->
                      </div>
                 </div>
                 <div class="mt-6 text-center">
@@ -258,6 +258,7 @@
 
             // --- ESTADO DO JOGO ---
             let gameState = {};
+            let messageTimer = null; // Timer para o modal de mensagem
 
             // --- LÓGICA DO JOGO ---
             const DICE_FACES = {
@@ -268,6 +269,7 @@
                 rosa: ['cerebro', 'pegada', 'pegada', 'pegada', 'tiro', 'tiro'],
                 branco: ['pegada', 'pegada', 'pegada', 'dois cerebros', 'dois tiros', 'tiro'],
                 'papai noel': ['cerebro', 'pegada', 'tiro', 'dois cerebros', 'capacete', 'energetico']
+                
             };
 
             // DADO DE ÔNIBUS (12 LADOS)
@@ -528,7 +530,7 @@
                 renderDice(diceResults, busResult); // Renderiza a 'diceResults' original (que pode ter sido modificada)
             }
 
-            // MODIFICADA para aceitar 'originalResults' para manipulação
+            // MODIFICADA para aceitar 'originalResults' e adicionar mensagens de evento
             function processRollResults(results, busResult = null, originalResults) {
                 let currentRollMessage = [];
                 let forceStop = false;
@@ -538,12 +540,18 @@
                     currentRollMessage.push(`🚌 Ônibus: ${busResult}!`);
                     
                     if (busResult === 'colheita') {
+                        // MODIFICAÇÃO: Adiciona mensagem de evento
+                        showTemporaryMessage("COLHEITA!", "Todos os tiros desta rolagem viraram pegadas!", "yellow");
                         results.forEach(item => {
                             if (item.result === 'tiro') {
                                 item.result = 'pegada';
                                 item.transformed = 'reverted'; // Flag para efeito visual
                             }
                         });
+                    }
+                    // MODIFICAÇÃO: Adiciona mensagem de evento
+                    if (busResult === 'rastro de morte') {
+                        showTemporaryMessage("RASTRO DE MORTE!", "Todas as pegadas na mesa viraram CÉREBROS!", "red");
                     }
                 }
 
@@ -560,6 +568,8 @@
                 // Processa energéticos
                 if (results.some(item => item.result === 'energetico')) {
                     gameState.turnState.isEnergized = true;
+                    // MODIFICAÇÃO: Adiciona mensagem de evento
+                    showTemporaryMessage("ENERGÉTICO!", "Pegadas verdes agora contam como CÉREBROS!", "purple");
                 }
                 if (gameState.turnState.isEnergized) {
                     results.forEach(item => {
@@ -592,6 +602,8 @@
                         case 'capacete':
                             if (gameState.turnState.shots > 0) gameState.turnState.shots--;
                             currentRollMessage.push("capacete salvador");
+                            // MODIFICAÇÃO: Adiciona mensagem de evento
+                            showTemporaryMessage("CAPACETE!", "Um tiro foi bloqueado! Que sorte!", "blue");
                             break;
                         case 'energetico':
                             currentRollMessage.push("energético!");
@@ -617,6 +629,8 @@
                     switch (busResult) {
                         case 'pare':
                             forceStop = true;
+                            // MODIFICAÇÃO: Adiciona mensagem de evento
+                            showTemporaryMessage("PARE!", "O ônibus parou. O seu turno acaba aqui!", "red");
                             break;
                         case 'cerebro':
                             gameState.turnState.brains++;
@@ -640,25 +654,23 @@
                             break;
                         case 'atropelamento':
                             gameState.turnState.isBusAvailable = false; // Bloqueia o ônibus
-                            gameState.turnState.isBusMode = false;      // Força a saída
+                            gameState.turnState.isBusMode = false;     // Força a saída
                             currentRollMessage.push("Atropelado! Você foi ejetado do ônibus.");
                             
                             let lostBrain = false;
-                            // let returnedDieColor = null; // REMOVIDO
-
+                            
                             // LÓGICA MODIFICADA: Verifica se tem 1 cérebro ou mais (em vez de > 1)
                             if (gameState.turnState.brains > 0) {
                                 gameState.turnState.brains--;
                                 lostBrain = true;
                                 currentRollMessage.push("Perdeu 1 cérebro!");
-
-                                // LÓGICA DE DEVOLVER DADO REMOVIDA
                             }
                             
                             // Chama a "animação" (modal) - Mensagem atualizada
                             showTemporaryMessage(
                                 "ATROPELADO!", 
-                                `Você foi ejetado! ${lostBrain ? "Perdeu 1 cérebro." : "Mas escapou sem perder cérebros!"}`
+                                `Você foi ejetado! ${lostBrain ? "Perdeu 1 cérebro." : "Mas escapou sem perder cérebros!"}`,
+                                "red" // MODIFICAÇÃO: Passa a cor
                             );
                             
                             break;
@@ -674,6 +686,8 @@
                     gameState.isTurnOver = true;
                     gameState.turnState.brains = 0;
                     gameMessageEl.textContent = 'BOOM! Você levou 3 tiros e perdeu seus cérebros!';
+                    // MODIFICAÇÃO: Adiciona mensagem de evento para morte
+                    showTemporaryMessage("MORREU!", "Você levou 3 ou mais tiros e perdeu tudo!", "red");
                 }
 
                 if (forceStop && !gameState.isTurnOver) {
@@ -682,17 +696,36 @@
                 }
             }
             
-            // NOVO: Função para mostrar modal de mensagem
-            function showTemporaryMessage(title, text) {
+            // NOVO: Função para mostrar modal de mensagem (agora com cores)
+            function showTemporaryMessage(title, text, color = 'red') {
+                // Limpa timer anterior para evitar sobreposição
+                if (messageTimer) {
+                    clearTimeout(messageTimer);
+                    messageModal.classList.add('hidden');
+                    messageModal.classList.remove('flex');
+                }
+
+                const titleColorClasses = {
+                    red: 'text-red-500',
+                    blue: 'text-blue-400',
+                    purple: 'text-purple-400',
+                    yellow: 'text-yellow-400',
+                };
+                
+                // Remove todas as cores antigas e adiciona a nova
+                messageModalTitle.classList.remove('text-red-500', 'text-blue-400', 'text-purple-400', 'text-yellow-400');
+                messageModalTitle.classList.add(titleColorClasses[color] || 'text-red-500');
+
                 messageModalTitle.textContent = title;
                 messageModalText.textContent = text;
                 messageModal.classList.remove('hidden');
                 messageModal.classList.add('flex');
 
                 // Esconde o modal e o backdrop após 3 segundos
-                setTimeout(() => {
+                messageTimer = setTimeout(() => {
                     messageModal.classList.add('hidden');
                     messageModal.classList.remove('flex');
+                    messageTimer = null; // Limpa o ID do timer
                 }, 3000); // O modal vai sumir 0.5s antes por causa da animação fade-out
             }
 
