@@ -1,70 +1,91 @@
-# 🧟‍♂️ Zombie Roll 🎲
+👻 Ghost Roll 🎲
 
-Bem-vindo ao Zombie Roll, uma adaptação digital do popular jogo de dados onde a sorte e a fome por cérebros se encontram! Reúna seus amigos, escolha seus nomes de zumbi e veja quem é o morto-vivo mais sortudo da rodada.
+Bem-vindo ao Ghost Roll, uma adaptação digital de um popular jogo de dados onde a coragem e a vontade de capturar fantasmas se encontram! Reúna seus amigos, escolha seus nomes de caçador e veja quem é o investigador paranormal mais sortudo (ou corajoso) da rodada.
 
-# ✨ Jogue Agora! ✨
-
-A caçada por cérebros está a apenas um clique de distância. Jogue diretamente no seu navegador:
-
-# [➡️ CLIQUE AQUI PARA JOGAR ZOMBIE ROLL](https://nsu-duxs.github.io/ZombieRolls-/ZombieRoll.html)
-
-# 🚀 Funcionalidades
+🚀 Funcionalidades
 
 Multiplayer Local: Jogue com 2 a 6 amigos no mesmo dispositivo.
 
-Nomes Personalizados: Dê a cada zumbi um nome único para uma experiência mais imersiva.
+Nomes Personalizados: Dê a cada caçador um nome único para uma experiência mais imersiva.
 
-Dados Especiais: Além dos dados clássicos (verde, amarelo, vermelho), o jogo inclui dados bônus com faces e efeitos únicos!
+Dados Especiais: Além dos dados de investigação (verde, amarelo, vermelho), o jogo inclui dados bônus (rosa, branco, vidente) e o temível dado da "Casa Mal-Assombrada".
 
-Interface Temática: Fontes, ícones e cores que mergulham você no apocalipse zumbi.
+Interface Temática: Fontes, ícones e cores que mergulham você na caçada paranormal.
 
-Totalmente Responsivo: Jogue no seu computador, tablet ou celular com uma experiência adaptada para cada tela.
+Totalmente Responsivo: Jogue no seu computador, tablet ou celular.
 
-Animações e Efeitos: Animações de rolagem de dados e efeitos visuais para os eventos do jogo.
+Animações e Efeitos: Animações de rolagem e efeitos visuais para os eventos do jogo.
 
-# 🧠 Como Jogar (Tutorial)
+🧠 Como Jogar (Tutorial)
 
 Objetivo
-O objetivo é simples: seja o primeiro zumbi a coletar 13 cérebros!
+
+O objetivo é simples: seja o primeiro caçador a coletar 13 fantasmas!
 
 1. Preparação
-Na tela inicial, selecione o número de jogadores.
+
+Na tela inicial, selecione o número de caçadores.
 
 Digite o nome de cada jogador nos campos que aparecem.
 
 Clique em "Começar a Caçada!" para iniciar o jogo.
 
 2. Seu Turno
-No seu turno, você vai pegar 3 dados aleatórios do "copo" e rolá-los. Cada face do dado tem um resultado diferente:
 
-🧠 Cérebro: Delícia! Você devorou um cérebro. Este dado é separado e adicionado à sua pontuação do turno.
+No seu turno, você vai pegar 3 itens (dados) aleatórios da "mochila" e rolá-los. Cada face tem um resultado diferente:
 
-💥 Tiro: Ai! A sua vítima revidou. Este dado também é separado. Se você acumular 3 tiros no mesmo turno, seu turno acaba imediatamente e você perde todos os cérebros que coletou naquela rodada.
+👻 Fantasma: Sucesso! Você capturou um fantasma. Este dado é separado e adicionado à sua pontuação do turno.
 
-👣 Pegada: Droga! A vítima escapou. Se você decidir rolar novamente, terá que rolar este dado de "pegada" junto com novos dados do copo para completar 3 dados na mão.
+😱 Insanidade: Cuidado! Sua sanidade está se esvaindo. Este dado também é separado. Se você acumular 3 insanidades no mesmo turno, você enlouquece, seu turno acaba imediatamente e você perde todos os fantasmas que coletou naquela rodada.
 
-3. Continuar ou Parar?
+🦠 Gosma: Eca! A entidade escapou. Se você decidir rolar novamente, terá que rolar este dado de "gosma" junto com novos itens da mochila para completar 3 dados na mão.
+
+3. Continuar ou Fugir?
+
 Após cada rolagem, você tem uma decisão a tomar:
 
-Parar Turno: Você está satisfeito com os cérebros que coletou e não quer arriscar. Seus cérebros são adicionados à sua pontuação total e o turno passa para o próximo jogador.
+Fugir (Parar): Você está satisfeito com os fantasmas que coletou e não quer arriscar sua sanidade. Seus fantasmas são adicionados à sua pontuação total e o turno passa para o próximo jogador.
 
-Rolar Dados: Você é um zumbi ganancioso e quer mais cérebros! Você pega novos dados do copo até ter 3 para rolar (reutilizando os dados de "pegada" da rolagem anterior) e tenta a sorte novamente.
+Rolar Dados: Você é um caçador ganancioso e quer mais aparições! Você pega novos itens da mochila até ter 3 para rolar (reutilizando os dados de "gosma" da rolagem anterior) e tenta a sorte novamente.
 
-4. Dados Especiais 🎅
-O dado "Papai Noel" possui faces únicas que podem mudar o jogo:
+4. Dados Especiais (Dado Vidente 🔮)
 
-⛑️ Capacete: Salvo pelo capacete! Esta face permite remover um dado de "tiro" que você já tenha coletado no turno.
+O dado "Vidente" (branco e vermelho) possui faces únicas que podem mudar o jogo:
 
-⚡ Energético: Que adrenalina! Ao rolar esta face, todas as pegadas 👣 de dados verdes 🟢 que você rolar (nesta e nas próximas rolagens do seu turno) são automaticamente transformadas em cérebros 🧠!
+🧿 Amuleto: Salvo pelo amuleto! Esta face permite remover um dado de "insanidade" 😱 que você já tenha coletado no turno.
 
-5. Fim de Jogo
-O jogo termina assim que um jogador atinge 13 ou mais cérebros ao final do seu turno. Este jogador é declarado o Zumbi Supremo e vencedor!
+📡 Detector: Que sinal forte! Ao rolar esta face, todas as gosmas 🦠 de dados verdes 🟢 que você rolar (nesta e nas próximas rolagens do seu turno) são automaticamente transformadas em fantasmas 👻!
+
+5. A Casa Mal-Assombrada 🏠
+
+Após sua primeira rolagem (e desde que não tenha sido expulso), você pode tomar uma decisão arriscada:
+
+Entrar na Casa: Ao invés de rolar 3 dados normais, você rolará 2 dados normais + 1 Dado da Casa (preto, 12 lados).
+
+Sair da Casa: Você volta a rolar 3 dados normais. Se você sair, não pode entrar de novo neste turno.
+
+O Dado da Casa tem efeitos poderosos e perigosos:
+
+✨ Purificação: Converte toda "insanidade" 😱 desta rolagem em "gosma" 🦠.
+
+☠️ Assombração: O mal se espalha! Converte TODAS as "gosmas" 🦠 (as que você já tinha e as desta rolagem) em "fantasmas" 👻!
+
+💨 Susto: Você foi expulso! Você perde 1 fantasma 👻 que já tinha no turno, é forçado a "Sair da Casa" e não pode entrar novamente neste turno.
+
+🚪 Porta Fechada: A porta se fecha! Seu turno termina imediatamente (mas você fica com os fantasmas que coletou).
+
+(Outras faces): São combinações de Fantasmas e Insanidade (ex: 👻👻👻, 😱😱, 👻😱).
+
+6. Fim de Jogo
+
+O jogo termina assim que um jogador atinge 13 ou mais fantasmas ao final do seu turno. Este jogador é declarado o Caçador Supremo e vencedor!
 
 🛠️ Tecnologias Utilizadas
+
 HTML5
 
 CSS3 com Tailwind CSS
 
 JavaScript (Vanilla JS)
 
-Divirta-se e que vença o zumbi mais faminto!
+Divirta-se e que vença o caçador mais corajoso!
